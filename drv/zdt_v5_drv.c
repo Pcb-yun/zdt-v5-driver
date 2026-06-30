@@ -515,6 +515,7 @@ void ZDT_V5_Pos_Control(uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, u
 	cmd[13] = (uint8_t)raF; cmd[14] = snF; cmd[15] = END_CODE;
 	zdt_v5_port_send(cmd, 16);
 #else
+	(void)dec;
 	cmd[2] = dir; cmd[3] = (uint8_t)(vel >> 8); cmd[4] = (uint8_t)(vel >> 0);
 	cmd[5] = (uint8_t)acc;
 	cmd[6] = (uint8_t)(clk >> 24); cmd[7] = (uint8_t)(clk >> 16); cmd[8] = (uint8_t)(clk >> 8); cmd[9] = (uint8_t)(clk >> 0);
@@ -653,6 +654,8 @@ void ZDT_V5_Fast_Set_Param(uint8_t addr, uint16_t vel, uint16_t acc, uint16_t de
 	uint8_t cmd[16] = {0};
 	cmd[0] = addr; cmd[1] = CMD_POS_MODE_FAST_SET;
 #if CURRENT_FIRMWARE == FIRMWARE_EMM
+	(void)dec;
+	(void)max_current;
 	cmd[2] = (uint8_t)(vel >> 8); cmd[3] = (uint8_t)(vel >> 0);
 	cmd[4] = (uint8_t)acc;
 	cmd[5] = mode;
