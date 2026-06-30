@@ -1,0 +1,52 @@
+name: Build Check
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  compile-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 ARM GCC 交叉编译器
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi
+
+      - name: 编译检查（core + drv）
+        run: |
+          # 使用 CI 专用配置和移植接口替换用户模板
+          cp ci/stubs/zdt_v5_cfg.h  .
+          cp ci/stubs/zdt_v5_port.h .
+          cp ci/stubs/zdt_v5_port.c .
+
+          # 编译检查，开启所有告警并将告警视为错误
+          arm-none-eabi-gcc -c -std=c99 -Wall -Wextra -Werror \
+            -I. -Icore -Idrv \
+            drv/zdt_v5_drv.c     -o /dev/null
+
+          arm-none-eabi-gcc -c -std=c99 -Wall -Wextra -Werror \
+            -I. -Icore -Idrv \
+            drv/zdt_v5_engine.c  -o /dev/null
+
+      - name: 编译检查（X 固件）
+        run: |
+          cp ci/stubs/zdt_v5_cfg.h  zdt_v5_cfg.h
+          cp ci/stubs/zdt_v5_port.h .
+          cp ci/stubs/zdt_v5_port.c .
+
+          # 替换为 X 固件配置
+          sed -i 's/FIRMWARE_EMM/FIRMWARE_X/' zdt_v5_cfg.h
+
+          arm-none-eabi-gcc -c -std=c99 -Wall -Wextra -Werror \
+            -I. -Icore -Idrv \
+            drv/zdt_v5_drv.c     -o /dev/null
+
+          arm-none-eabi-gcc -c -std=c99 -Wall -Wextra -Werror \
+            -I. -Icore -Idrv \
+            drv/zdt_v5_engine.c  -o /dev/null
