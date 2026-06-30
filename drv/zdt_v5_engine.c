@@ -220,7 +220,6 @@ void ZDT_V5_Receive(uint8_t *data, uint8_t len, MotorStatus_t *motors) {
 #endif /* MOTOR_STATUS_BATTERY_VOLTAGE */
 
 	    /* ---- 驱动配置参数读取应答 ---- */
-#if MOTOR_DRIVER_READ_BATCH
 	    case CMD_READ_DRIVER_CONFIG:
 #if CURRENT_FIRMWARE == FIRMWARE_EMM
 		    if (len >= 33) {
@@ -358,9 +357,7 @@ void ZDT_V5_Receive(uint8_t *data, uint8_t len, MotorStatus_t *motors) {
 #endif
 		    }
 #endif /* CURRENT_FIRMWARE */
-#if MOTOR_DRIVER_READ_BATCH
 			break;
-#endif /* MOTOR_DRIVER_READ_BATCH */
 #if MOTOR_DRIVER_POS_WINDOW
         case CMD_READ_POSITION_WINDOW: if (len >= 5) motor->pos_window = (data[2] << 8) | data[3]; break;
 #endif /* MOTOR_DRIVER_POS_WINDOW */
