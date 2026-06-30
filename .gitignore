@@ -19,6 +19,6 @@ cmake-build-*/
 .DS_Store
 Thumbs.db
 
-zdt_v5_cfg.h
-zdt_v5_port.h
-zdt_v5_port.c
+/zdt_v5_cfg.h
+/zdt_v5_port.h
+/zdt_v5_port.c
