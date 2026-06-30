@@ -101,7 +101,7 @@ void ZDT_V5_Receive(uint8_t *data, uint8_t len, MotorStatus_t *motors) {
 			    motor->temp = (data[28] == 0x01) ? -(int8_t)data[29] : (int8_t)data[29];
 #endif /* MOTOR_STATUS_TEMPERATURE */
 #if MOTOR_STATUS_HOME_FLAGS
-			    motor->home_flags = data[30];
+			    { uint8_t hf = data[30]; motor->enc_rdy = (hf & 0x01) != 0; motor->cal_rdy = (hf & 0x02) != 0; motor->org_sf = (hf & 0x04) != 0; motor->org_cf = (hf & 0x08) != 0; motor->otp_tf = (hf & 0x10) != 0; motor->ocp_tf = (hf & 0x80) != 0; }
 #endif /* MOTOR_STATUS_HOME_FLAGS */
 #if MOTOR_STATUS_MOTOR_FLAGS
 			    { uint8_t st = data[31]; motor->ens = (st & 0x01) != 0; motor->prf = (st & 0x02) != 0; motor->cgi = (st & 0x04) != 0; motor->cgp = (st & 0x08) != 0; motor->esi_l = (st & 0x10) != 0; motor->esi_r = (st & 0x40) != 0; motor->oac = (st & 0x80) != 0; }
@@ -140,7 +140,7 @@ void ZDT_V5_Receive(uint8_t *data, uint8_t len, MotorStatus_t *motors) {
 			    motor->temp = (data[32] == 0x01) ? -(int8_t)data[33] : (int8_t)data[33];
 #endif /* MOTOR_STATUS_TEMPERATURE */
 #if MOTOR_STATUS_HOME_FLAGS
-			    motor->home_flags = data[34];
+			    { uint8_t hf = data[34]; motor->enc_rdy = (hf & 0x01) != 0; motor->cal_rdy = (hf & 0x02) != 0; motor->org_sf = (hf & 0x04) != 0; motor->org_cf = (hf & 0x08) != 0; motor->otp_tf = (hf & 0x10) != 0; motor->ocp_tf = (hf & 0x80) != 0; }
 #endif /* MOTOR_STATUS_HOME_FLAGS */
 #if MOTOR_STATUS_MOTOR_FLAGS
 			    { uint8_t st = data[35]; motor->ens = (st & 0x01) != 0; motor->prf = (st & 0x02) != 0; motor->cgi = (st & 0x04) != 0; motor->cgp = (st & 0x08) != 0; motor->esi_l = (st & 0x10) != 0; motor->esi_r = (st & 0x40) != 0; motor->oac = (st & 0x80) != 0; }
@@ -358,6 +358,8 @@ void ZDT_V5_Receive(uint8_t *data, uint8_t len, MotorStatus_t *motors) {
 #endif
 		    }
 #endif /* CURRENT_FIRMWARE */
+#if MOTOR_DRIVER_READ_BATCH
+			break;
 #endif /* MOTOR_DRIVER_READ_BATCH */
 #if MOTOR_DRIVER_POS_WINDOW
         case CMD_READ_POSITION_WINDOW: if (len >= 5) motor->pos_window = (data[2] << 8) | data[3]; break;
