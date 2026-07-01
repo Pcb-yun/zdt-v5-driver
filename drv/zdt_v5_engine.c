@@ -22,6 +22,9 @@
 
 #include "zdt_v5_engine.h"
 #include "zdt_v5_drv.h"
+
+#if !ONLY_DRIVER
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -674,3 +677,5 @@ static void Motor_Process_Param_Write(uint8_t motor_id, MotorParamWrite_t *write
         case PARAM_NONE: default: ZDT_V5_LOG("Unknown or none param write type: %d", write->type); break;
 	}
 }
+
+#endif /* !ONLY_DRIVER */

@@ -23,14 +23,12 @@
 #ifndef __ZDT_V5_CMD_H__
 #define __ZDT_V5_CMD_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 #include <stdint.h>
 #include <stdbool.h>
 #include "zdt_v5_proto.h"
 #include "zdt_v5_cfg.h"
+
+#if !ONLY_DRIVER
 
 /**
  * @brief 电机命令操作类型枚举
@@ -698,8 +696,5 @@ typedef struct {
 	} type;
 } MotorCmd_t;
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
+#endif /* !ONLY_DRIVER */
 #endif /* __ZDT_V5_CMD_H__ */

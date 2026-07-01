@@ -18,6 +18,7 @@
 #define CURRENT_MOTOR_MODEL                MOTOR_MODEL_X42S
 #define USE_HEARTBEAT                      1
 #define MOTOR_NUM                          4
+#define ONLY_DRIVER                        0
 
 /******************** 设备信息与特殊功能 *********************/
 #define MOTOR_READ_VERSION                 1
