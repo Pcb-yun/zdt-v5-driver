@@ -33,14 +33,35 @@ static void Motor_Process_Trigger(uint8_t motor_id, MotorTrigger_t *trigger);
 static void Motor_Process_Param_Read(uint8_t motor_id, MotorParamRead_t *read);
 static void Motor_Process_Param_Write(uint8_t motor_id, MotorParamWrite_t *write);
 
+static MotorStatus_t *motor_registry[MOTOR_NUM];
+static uint8_t motor_registry_count = 0;
+
+/**
+ * @brief 注册电机到引擎层
+ * @param id 电机ID
+ * @param status 电机状态结构体指针
+ * @return 注册状态
+ */
+bool ZDT_V5_Register_Motor(uint8_t id, MotorStatus_t *status) {
+	if (status == NULL) return false;
+	if (id == 0) return false;
+	if (motor_registry_count >= MOTOR_NUM) return false;
+
+	for (uint8_t i = 0; i < motor_registry_count; i++) {
+		if (motor_registry[i]->motor_id == id) return false;
+	}
+
+	status->motor_id = id;
+	motor_registry[motor_registry_count++] = status;
+	return true;
+}
 
 /**
  * @brief 处理接收消息
  * @param data 接收消息指针
  * @param len 接收消息长度
- * @param motors 电机状态数组
  */
-void ZDT_V5_Receive(uint8_t *data, uint8_t len, MotorStatus_t *motors) {
+void ZDT_V5_Receive(uint8_t *data, uint8_t len) {
 	if (len < 3) return;
 
 	uint8_t motor_id = data[0];
@@ -48,8 +69,13 @@ void ZDT_V5_Receive(uint8_t *data, uint8_t len, MotorStatus_t *motors) {
 
 	if (motor_id == 0) return;
 
-	MotorStatus_t *motor = &motors[motor_id - 1];
-	motor->motor_id = motor_id;
+	MotorStatus_t *motor = NULL;
+	for (uint8_t i = 0; i < motor_registry_count; i++) {
+		if (motor_registry[i]->motor_id == motor_id) {
+			motor = motor_registry[i]; break;
+		}
+	}
+	if (motor == NULL) return;
 
 	switch (cmd_code) {
 	    /* ---- 命令应答处理 ---- */

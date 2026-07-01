@@ -22,8 +22,8 @@
  * 将本文件复制到工程中，并改名为 zdt_v5_cfg.h
  */
 
-#ifndef __ZDT_V5_CFG_H__
-#define __ZDT_V5_CFG_H__
+#ifndef __ZDT_V5_CFG_TEMPLATE_H__
+#define __ZDT_V5_CFG_TEMPLATE_H__
 
 #include "zdt_v5_proto.h"
 
@@ -44,13 +44,13 @@
  * 使用心跳保护
  * 这里只做最小参数读取保证，具体功能需要在应用层自行实现
  */
-#define USE_HEARTBEAT 1
+#define USE_HEARTBEAT 0
 
 /**
  * 电机数量
  * 应用层辅助定义，可不使用
  */
-#define MOTOR_NUM 4
+#define MOTOR_NUM 0
 
 /**
  * 仅使用驱动函数
@@ -173,13 +173,13 @@
 /******************** 控制参数读写 *********************/
 #define MOTOR_PID_READ                      0   // 读取PID参数
 #if MOTOR_PID_READ
-#define MOTOR_PID_WRITE                     1   // 修改PID参数
+#define MOTOR_PID_WRITE                     0   // 修改PID参数
 #endif
 
 #if CURRENT_MOTOR_MODEL == MOTOR_MODEL_X42S || CURRENT_MOTOR_MODEL == MOTOR_MODEL_Y42
 #define MOTOR_INTEGRAL_LIMIT_READ           0   // 积分限幅/刚性系数
 #if MOTOR_INTEGRAL_LIMIT_READ
-#define MOTOR_INTEGRAL_LIMIT_WRITE          1   // 修改积分限幅/刚性系数
+#define MOTOR_INTEGRAL_LIMIT_WRITE          0   // 修改积分限幅/刚性系数
 #endif
 
 #define MOTOR_PROTECT_THRESHOLD_READ        0   // 读取过热过流保护阈值
@@ -205,11 +205,11 @@
 
 
 /******************** 运动控制命令 *********************/
-#define MOTOR_CMD_ENABLE                    1   // 电机使能控制
-#define MOTOR_CMD_STOP                      1   // 立即停止
+#define MOTOR_CMD_ENABLE                    0   // 电机使能控制
+#define MOTOR_CMD_STOP                      0   // 立即停止
 #define MOTOR_POS_MODE_FAST                 0   // 快速位置模式
-#define MOTOR_POS_MODE_TRAPEZOIDAL          1   // 位置模式
-#define MOTOR_VELOCITY_MODE                 1   // 速度模式
+#define MOTOR_POS_MODE_TRAPEZOIDAL          0   // 位置模式
+#define MOTOR_VELOCITY_MODE                 0   // 速度模式
 
 #if CURRENT_FIRMWARE == FIRMWARE_X
 #define MOTOR_POS_MODE_DIRECT               0   // 直通限速位置模式
@@ -221,7 +221,7 @@
 #define MOTOR_VELOCITY_MODE_LIMIT           0   // 速度模式（+最大电流限制）
 #endif /* CURRENT_FIRMWARE */
 
-#define MOTOR_SYNC_TRIGGER                  1   // 触发多机同步运动
+#define MOTOR_SYNC_TRIGGER                  0   // 触发多机同步运动
 
 #if CURRENT_MOTOR_MODEL == MOTOR_MODEL_X42S || CURRENT_MOTOR_MODEL == MOTOR_MODEL_Y42
 #define MOTOR_MULTI_CMD                     0   // 多电机命令
@@ -229,8 +229,8 @@
 
 
 /******************** 触发动作命令 *********************/
-#define MOTOR_TRIGGER_ENCODER_CALIB         1   // 触发编码器校准
-#define MOTOR_TRIGGER_RESET_POS             1   // 当前位置角度清零
+#define MOTOR_TRIGGER_ENCODER_CALIB         0   // 触发编码器校准
+#define MOTOR_TRIGGER_RESET_POS             0   // 当前位置角度清零
 #define MOTOR_TRIGGER_CLEAR_PROTECT         0   // 解除堵转/过热/过流保护
 #define MOTOR_TRIGGER_FACTORY_RESET         0   // 恢复出厂设置
 #define MOTOR_HOME_SET_ZERO                 0   // 设置单圈回零零点位置
@@ -238,7 +238,7 @@
 #define MOTOR_HOME_INTERRUPT                0   // 强制中断回零
 
 #if CURRENT_MOTOR_MODEL == MOTOR_MODEL_X42S || CURRENT_MOTOR_MODEL == MOTOR_MODEL_Y42
-#define MOTOR_TRIGGER_RESTART               1   // 重启电机
+#define MOTOR_TRIGGER_RESTART               0   // 重启电机
 #endif
 
 
@@ -263,4 +263,4 @@
 #define MOTOR_PERIODIC_RETURN               0   // 定时返回信息
 #endif
 
-#endif /* __ZDT_V5_CFG_H__ */
+#endif /* __ZDT_V5_CFG_TEMPLATE_H__ */

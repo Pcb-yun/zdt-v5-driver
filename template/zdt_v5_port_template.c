@@ -26,6 +26,12 @@
 /*
 #include "zdt_v5_port.h"
 
+/**
+ * @brief 串口发送函数（必须）
+ * @param cmd 命令指针
+ * @param len 命令长度
+ */
+/*
 void zdt_v5_port_send(uint8_t *cmd, uint8_t len) {
     // STM32 HAL 阻塞发送:
     //     HAL_UART_Transmit(&huart6, cmd, len, 1000);
@@ -41,9 +47,24 @@ void zdt_v5_port_send(uint8_t *cmd, uint8_t len) {
 }
 */
 
-/* ==================== 2. 可选：定义日志宏 ==================== */
+/* ==================== 2. 可选：实现日志输出函数 ==================== */
 /*
- * 引擎层用 ZDT_V5_LOG 输出警告信息，如果不需要可省略。
- * 在编译选项中定义:
- *   #define ZDT_V5_LOG(fmt, ...)  printf("[STEP] " fmt "\r\n", ##__VA_ARGS__)
+ * 引擎层通过 ZDT_V5_LOG 宏输出警告信息，默认为空（不输出）。
+ * 如需启用，在 zdt_v5_port.h 中将宏指向用户实现的日志函数，例如:
+ *
+ *   void zdt_v5_port_log(const char *fmt, ...);
+ *
+ *   #define ZDT_V5_LOG(fmt, ...)  zdt_v5_port_log("[STEP] " fmt "\r\n", ##__VA_ARGS__)
+ *
+ * 然后在 zdt_v5_port.c 中实现该函数:
+ *
+ *   #include <stdio.h>
+ *   #include <stdarg.h>
+ *
+ *   void zdt_v5_port_log(const char *fmt, ...) {
+ *       va_list args;
+ *       va_start(args, fmt);
+ *       vprintf(fmt, args);
+ *       va_end(args);
+ *   }
  */

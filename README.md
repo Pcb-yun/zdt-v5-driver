@@ -25,7 +25,7 @@
 | 功能覆盖    | 使能/速度/位置/力矩/停止/同步/回零/参数读写/编码器校准等全部功能 |
 | 条件编译    | 约 100 个配置开关，精确控制每个功能的编译              |
 | 资源占用    | 配置开关关闭的功能完全不占用代码空间                   |
-| 多电机     | 通过 `MOTOR_NUM` 配置，API 天然支持任意数量电机     |
+| 多电机     | 通过 `MOTOR_NUM` 配置，注册制支持任意 ID（无需连续）  |
 | RTOS 适配 | 命令队列 + 接收队列 + 状态轮询任务架构，开箱即用          |
 | 无平台依赖   | 仅需标准 C 库，任何 MCU 架构均可移植               |
 
@@ -44,7 +44,7 @@
 │
 ├── drv/                     # 驱动协议层
 │   ├── zdt_v5_drv.h/.c     # 驱动 API（命令打包，条件编译裁剪）
-│   └── zdt_v5_engine.h/.c  # 引擎层（响应解析、命令分发，可通过 ONLY_DRIVER 关闭）
+│   └── zdt_v5_engine.h/.c  # 引擎层（注册制管理、响应解析、命令分发，可通过 ONLY_DRIVER 关闭）
 │
 ├── template/                # 移植模板（用户复制到工程中修改）
 │   ├── zdt_v5_cfg_template.h   # 配置文件模板
@@ -142,23 +142,34 @@ void zdt_v5_port_send(uint8_t *cmd, uint8_t len) {
 
 函数内部可以使用阻塞发送、DMA 发送或中断发送，仓库对此无限制。
 
-#### 4. 处理串口接收
+#### 4. 注册电机并处理串口接收
 
-串口接收由用户管理（中断或 DMA），收到完整的数据帧后调用 `ZDT_V5_Receive()` 即可：
+使用引擎层前，需要先注册电机。电机 ID 可任意指定，无需从 1 开始连续：
 
 ```c
 #include "zdt_v5_engine.h"
 
+static MotorStatus_t motors[MOTOR_NUM];
+
+/* 注册电机（ID 可任意，如 1、3、7） */
+ZDT_V5_Register_Motor(1, &motors[0]);
+ZDT_V5_Register_Motor(3, &motors[1]);
+ZDT_V5_Register_Motor(7, &motors[2]);
+```
+
+串口接收由用户管理（中断或 DMA），收到完整的数据帧后调用 `ZDT_V5_Receive()` 即可：
+
+```c
 /* 串口接收中断回调 */
 void on_uart_rx(uint8_t *data, uint8_t len) {
-    ZDT_V5_Receive(data, len, motors);
+    ZDT_V5_Receive(data, len);
 }
 ```
 
 ### 注意事项
 
 - 移植接口仅需实现串口发送，**接收由中断/DMA 处理**
-- 日志输出可选，不需要时无需任何配置
+- 日志输出可选：在 `port.h` 中定义 `ZDT_V5_LOG` 宏指向 `port.c` 中实现的日志函数，不需要时默认为空
 - 仓库中所有 `.h` 文件均包含 `extern "C"` 声明，C++ 工程可直接使用
 
 ## API 概览
@@ -183,7 +194,8 @@ void on_uart_rx(uint8_t *data, uint8_t len) {
 
 | 函数                   | 说明                                  |
 | -------------------- | ----------------------------------- |
-| `ZDT_V5_Receive`     | 处理串口接收数据，更新电机状态到 `MotorStatus_t` 数组 |
+| `ZDT_V5_Register_Motor` | 注册电机到引擎层（ID 可任意，无需从 1 开始连续） |
+| `ZDT_V5_Receive`     | 处理串口接收数据，更新已注册电机的状态 |
 | `ZDT_V5_Process_Cmd` | 执行电机命令（同步调用，内部调用发送函数）               |
 
 ### 命令结构体 (`zdt_v5_cmd.h`)
@@ -201,12 +213,39 @@ cmd.type.ctrl.p.vel.acc = 200;    // 加速度
 cmd.type.ctrl.p.vel.sync = false; // 同步标志
 ```
 
-### 移植接口 (`zdt_v5_port.h`)
+### 移植接口 (`zdt_v5_port.h` / `zdt_v5_port.c`)
 
-| 接口                   | 说明             |
-| -------------------- | -------------- |
-| `zdt_v5_port_send()` | 串口发送函数（用户必须实现） |
-| `ZDT_V5_LOG`         | 日志输出宏（可选，默认空）  |
+| 接口                   | 说明                          |
+| -------------------- | --------------------------- |
+| `zdt_v5_port_send()` | 串口发送函数（用户必须实现）              |
+| `zdt_v5_port_log()`  | 日志输出函数（可选，用户在 port.c 中实现）   |
+| `ZDT_V5_LOG`         | 日志输出宏（可选，用户在 port.h 中指向日志函数） |
+
+日志启用方式：
+
+1. 在 `zdt_v5_port.h` 中声明函数并定义宏：
+
+```c
+void zdt_v5_port_log(const char *fmt, ...);
+
+#define ZDT_V5_LOG(fmt, ...)  zdt_v5_port_log("[STEP] " fmt "\r\n", ##__VA_ARGS__)
+```
+
+2. 在 `zdt_v5_port.c` 中实现函数：
+
+```c
+#include <stdio.h>
+#include <stdarg.h>
+
+void zdt_v5_port_log(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    vprintf(fmt, args);
+    va_end(args);
+}
+```
+
+不需要日志时，`ZDT_V5_LOG` 默认定义为空，无需任何配置。
 
 ## RTOS 使用建议
 

@@ -85,7 +85,6 @@ void ZDT_V5_Read_Sys_Params(uint8_t addr, SysParams_t s) {
 #if MOTOR_STATUS_PIN_STATUS
 	case S_PIN  : cmd[i] = CMD_READ_PIN_STATUS; ++i; break;
 #endif
-	default: break;
 	}
 	cmd[i] = END_CODE; ++i;
 	zdt_v5_port_send(cmd, i);
@@ -153,7 +152,6 @@ void ZDT_V5_Auto_Return_Sys_Params_Timed(uint8_t addr, SysParams_t s, uint16_t t
 #if MOTOR_STATUS_PIN_STATUS
 		case S_PIN  : cmd[i] = CMD_READ_PIN_STATUS; ++i; break;
 #endif
-	default: break;
 	}
 	cmd[i] = (uint8_t)(time_ms >> 8); ++i;
 	cmd[i] = (uint8_t)(time_ms >> 0); ++i;
@@ -183,7 +181,6 @@ void ZDT_V5_Read_Driver_Params(uint8_t addr, DriverParams_t d) {
 #if MOTOR_DRIVER_HOME
 		case D_HOME: cmd[i] = CMD_READ_HOME_PARAMS; ++i; break;
 #endif
-	default: break;
 	}
 	cmd[i] = END_CODE; ++i;
 	zdt_v5_port_send(cmd, i);
@@ -217,7 +214,6 @@ void ZDT_V5_Read_Ctrl_Params(uint8_t addr, CtrlParams_t c) {
 #if MOTOR_HEARTBEAT_READ
 	case C_HEARTBEAT : cmd[i] = CMD_READ_HEARTBEAT_TIME; ++i; break;
 #endif
-	default: break;
 	}
 	cmd[i] = END_CODE; ++i;
 	zdt_v5_port_send(cmd, i);
@@ -377,7 +373,6 @@ void ZDT_V5_Read_Device_Info_Params(uint8_t addr, DeviceInfo_t i) {
 #if MOTOR_DRIVER_DMX512
 	case I_DMX512 : cmd[j] = CMD_READ_DMX512_PARAMS; ++j; cmd[j] = AUX_CODE_READ_DMX512; ++j; break;
 #endif
-	default: break;
 	}
 	cmd[j] = END_CODE; ++j;
 	zdt_v5_port_send(cmd, j);

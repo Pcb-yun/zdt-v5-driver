@@ -29,7 +29,7 @@ static uint8_t rx_len = 0;
 #if !ONLY_DRIVER
 /* 模拟串口接收回调 — 由中断/DMA 调用 */
 void uart_rx_callback(uint8_t *data, uint8_t len) {
-	ZDT_V5_Receive(data, len, motors);
+	ZDT_V5_Receive(data, len);
 }
 
 /* 发送电机命令的辅助函数 */
@@ -123,6 +123,26 @@ static void delay_ms(uint32_t ms) {
 	for (volatile uint32_t i = 0; i < ms * 1000; i++);
 }
 
+/* 移植接口实现（用户根据平台实现 zdt_v5_port_send）*/
+/*
+void zdt_v5_port_send(uint8_t *cmd, uint8_t len) {
+	HAL_UART_Transmit(&huart6, cmd, len, 100);
+}
+*/
+
+/* 日志输出函数（可选，启用时在 zdt_v5_port.h 中定义 ZDT_V5_LOG 指向此函数）*/
+/*
+#include <stdio.h>
+#include <stdarg.h>
+
+void zdt_v5_port_log(const char *fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	vprintf(fmt, args);
+	va_end(args);
+}
+*/
+
 /**
  * @brief 主函数
  *
@@ -136,6 +156,11 @@ int main(void) {
 	/***** 硬件初始化（用户根据平台实现） *****/
 	// uart_init(115200);          // 初始化串口
 	// uart_set_rx_callback(uart_rx_callback); // 注册接收回调
+
+#if !ONLY_DRIVER
+	/* 注册电机到引擎层（ID 可任意，无需连续） */
+	ZDT_V5_Register_Motor(1, &motors[0]);
+#endif
 
 	/***** 系统启动 *****/
 
@@ -164,7 +189,7 @@ int main(void) {
 #if !ONLY_DRIVER
 		/* 处理串口接收数据（由中断填充 rx_buf/rx_len）*/
 		if (rx_len > 0) {
-			ZDT_V5_Receive(rx_buf, rx_len, motors);
+			ZDT_V5_Receive(rx_buf, rx_len);
 			rx_len = 0;
 		}
 #endif

@@ -22,8 +22,8 @@
  * 将本文件复制到工程中，并改名为 zdt_v5_port.h
  */
 
-#ifndef __ZDT_V5_PORT_H__
-#define __ZDT_V5_PORT_H__
+#ifndef __ZDT_V5_PORT_TEMPLATE_H__
+#define __ZDT_V5_PORT_TEMPLATE_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,4 +47,4 @@ void zdt_v5_port_send(uint8_t *cmd, uint8_t len);
 }
 #endif /* __cplusplus */
 
-#endif /* __ZDT_V5_PORT_H__ */
+#endif /* __ZDT_V5_PORT_TEMPLATE_H__ */

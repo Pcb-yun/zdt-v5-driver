@@ -64,7 +64,7 @@ void Recv_Task(void *argument) {
 
 	for (;;) {
 		if (osMessageQueueGet(rx_queue, &rx_buf, NULL, osWaitForever) == osOK) {
-			ZDT_V5_Receive(rx_buf.data, rx_buf.len, motors);
+			ZDT_V5_Receive(rx_buf.data, rx_buf.len);
 		}
 	}
 }
@@ -81,7 +81,8 @@ void Update_Task(void *argument) {
 
 	for (;;) {
 		for (uint8_t i = 0; i < MOTOR_NUM; i++) {
-			cmd.motor_id = i + 1;
+			if (motors[i].motor_id == 0) continue;	// 跳过未注册的槽位
+			cmd.motor_id = motors[i].motor_id;
 			cmd.op_type = OP_PARAM_READ;
 			cmd.type.read.type = MP_SYS;
 			cmd.type.read.p.sys = S_CPOS;	// 读取实时位置
@@ -103,6 +104,9 @@ static void Motor_Init(void) {
 	/* 初始化队列 */
 	cmd_queue = osMessageQueueNew(16, sizeof(MotorCmd_t), NULL);
 	rx_queue = osMessageQueueNew(8, sizeof(RxBuf_t), NULL);
+
+	/* 注册电机到引擎层（ID 可任意，无需连续） */
+	ZDT_V5_Register_Motor(1, &motors[0]);
 
 	/* 初始化串口（HAL 库函数）*/
 	MX_USART6_UART_Init();
@@ -214,6 +218,19 @@ void zdt_v5_port_send(uint8_t *cmd, uint8_t len) {
 	HAL_UART_Transmit(&huart6, cmd, len, 100);
 }
 
+/* 日志输出函数（可选，启用时在 zdt_v5_port.h 中定义 ZDT_V5_LOG 指向此函数）*/
+/*
+#include <stdio.h>
+#include <stdarg.h>
+
+void zdt_v5_port_log(const char *fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	vprintf(fmt, args);
+	va_end(args);
+}
+*/
+
 /* 串口 DMA 接收完成回调 — 由 HAL 中断调用 */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 	if (huart->Instance == USART6) {
@@ -290,5 +307,18 @@ void zdt_v5_port_send(uint8_t *cmd, uint8_t len) {
 	extern UART_HandleTypeDef huart6;
 	HAL_UART_Transmit(&huart6, cmd, len, 100);
 }
+
+/* 日志输出函数（可选，启用时在 zdt_v5_port.h 中定义 ZDT_V5_LOG 指向此函数）*/
+/*
+#include <stdio.h>
+#include <stdarg.h>
+
+void zdt_v5_port_log(const char *fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	vprintf(fmt, args);
+	va_end(args);
+}
+*/
 
 #endif
