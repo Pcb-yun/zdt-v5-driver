@@ -29,7 +29,7 @@
 #include "zdt_v5_cfg.h"
 
 /**
- * @brief 系统状态参数枚举（驱动层和引擎层共用）
+ * @brief 系统状态参数枚举
  */
 typedef enum {
 	S_NULL = 0, // 无指令
@@ -87,7 +87,7 @@ typedef enum {
 } SysParams_t;
 
 /**
- * @brief 驱动配置参数枚举（驱动层和引擎层共用）
+ * @brief 驱动配置参数枚举
  */
 typedef enum {
 	D_NULL = 0, // 无指令
@@ -103,7 +103,7 @@ typedef enum {
 } DriverParams_t;
 
 /**
- * @brief 电机控制参数枚举（驱动层和引擎层共用）
+ * @brief 电机控制参数枚举
  */
 typedef enum {
 	C_NULL = 0, // 无指令
@@ -125,7 +125,7 @@ typedef enum {
 } CtrlParams_t;
 
 /**
- * @brief 设备信息与特殊功能枚举（驱动层和引擎层共用）
+ * @brief 设备信息与特殊功能枚举
  */
 typedef enum {
 	I_NULL = 0, // 无指令
