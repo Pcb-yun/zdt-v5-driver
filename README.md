@@ -13,6 +13,7 @@
 - **平台无关** — 核心层零平台依赖，仅需实现一个串口发送函数即可移植
 - **条件编译裁剪** — 所有功能通过配置文件开关控制，未启用的功能不会被编译，零额外开销
 - **原生 RTOS 友好** — 命令通过队列传递，天然适配任务间通信；接收解析与命令执行分离，符合 RTOS 任务分工
+- **双层架构可选** — 引擎层提供完整的命令封装和状态解析，驱动层提供轻量的函数式 API
 
 ## 特性
 
@@ -44,14 +45,14 @@
 │
 ├── drv/                     # 驱动协议层
 │   ├── zdt_v5_drv.h/.c     # 驱动 API（命令打包，条件编译裁剪）
-│   └── zdt_v5_engine.h/.c  # 引擎层（响应解析、命令分发）
+│   └── zdt_v5_engine.h/.c  # 引擎层（响应解析、命令分发，可通过 ONLY_DRIVER 关闭）
 │
 ├── template/                # 移植模板（用户复制到工程中修改）
 │   ├── zdt_v5_cfg_template.h   # 配置文件模板
 │   ├── zdt_v5_port_template.h  # 移植接口模板
 │   └── zdt_v5_port_template.c  # 移植实现模板
 │
-├── example/                 # 使用示例
+├── example/                 # 使用示例（支持 ONLY_DRIVER 模式）
 │   ├── bare_metal/          # 裸机示例
 │   └── freertos/            # FreeRTOS 示例
 │
@@ -61,6 +62,13 @@
 │   └── ZDT_X42S_指令分类与包含关系.md  # AI 辅助整理的指令分类与关系图
 └── LICENSE                  # GPL-3.0-or-later
 ```
+
+**架构选择：**
+
+| 模式 | `ONLY_DRIVER` | 包含层 | 适用场景 |
+|------|---------------|--------|----------|
+| 完整模式 | `0`（默认） | core + drv + engine | RTOS 环境、需要状态解析、复杂命令控制 |
+| 轻量模式 | `1` | core + drv | 裸机环境、资源受限、简单控制逻辑 |
 
 ## 移植方法
 
@@ -86,6 +94,7 @@
 #define CURRENT_FIRMWARE         FIRMWARE_EMM
 #define CURRENT_MOTOR_MODEL      MOTOR_MODEL_X42S
 #define MOTOR_NUM                4
+#define ONLY_DRIVER              0   // 仅使用驱动层，不使用引擎层（见下文）
 
 // 按需开启功能（0=关闭，1=开启）
 #define MOTOR_CMD_ENABLE         1   // 使能控制
@@ -93,6 +102,22 @@
 #define MOTOR_POS_MODE_TRAPEZOIDAL 1 // 位置模式
 #define MOTOR_TRIGGER_RESET_POS  1   // 位置清零
 ```
+
+#### 1.1 仅驱动层模式（ONLY_DRIVER）
+
+设置 `ONLY_DRIVER = 1` 可启用轻量级模式：
+
+- **不编译引擎层** — `zdt_v5_engine.c/.h` 完全不参与编译，减小代码体积
+- **直接调用驱动层 API** — 使用 `ZDT_V5_En_Control()`、`ZDT_V5_Vel_Control()` 等函数
+- **无命令结构体** — 无需 `MotorCmd_t`，参数直接传入函数
+- **适合场景** — 裸机环境、资源受限的 MCU、简单的电机控制逻辑
+
+对比两种使用方式：
+
+| 方式 | 接口 | 示例 |
+|------|------|------|
+| 引擎层 | `ZDT_V5_Process_Cmd(cmd)` | 通过 `MotorCmd_t` 结构体传递参数 |
+| 驱动层 | `ZDT_V5_En_Control(id, enable, sync)` | 直接调用函数，参数清晰 |
 
 #### 2. 创建移植接口头文件
 

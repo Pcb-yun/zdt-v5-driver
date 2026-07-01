@@ -9,10 +9,13 @@
  */
 
 #include "zdt_v5_drv.h"
+#if !ONLY_DRIVER
 #include "zdt_v5_engine.h"
+#endif
 #include "cmsis_os2.h"
 #include <string.h>
 
+#if !ONLY_DRIVER
 /* ======================== 电机状态 ======================== */
 
 static MotorStatus_t motors[MOTOR_NUM];
@@ -28,29 +31,6 @@ typedef struct {
 } RxBuf_t;
 
 static osMessageQueueId_t rx_queue;			// 串口接收数据队列
-
-/* ======================== 移植接口实现 ======================== */
-
-void zdt_v5_port_send(uint8_t *cmd, uint8_t len) {
-	extern UART_HandleTypeDef huart6;
-	HAL_UART_Transmit(&huart6, cmd, len, 100);
-}
-
-/* 串口 DMA 接收完成回调 — 由 HAL 中断调用 */
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
-	if (huart->Instance == USART6) {
-		extern uint8_t rx6Buffer[128];
-		RxBuf_t rx_buf;
-		memcpy(rx_buf.data, rx6Buffer, Size);
-		rx_buf.len = Size;
-
-		/* 将接收数据放入队列（ISR 安全版本）*/
-		osMessageQueuePut(rx_queue, &rx_buf, 0, 0);
-
-		/* 重新启动 DMA 接收 */
-		HAL_UARTEx_ReceiveToIdle_DMA(&huart6, rx6Buffer, 128);
-	}
-}
 
 /* ======================== 命令发送接口 ======================== */
 
@@ -132,7 +112,7 @@ static void Motor_Init(void) {
 	HAL_UARTEx_ReceiveToIdle_DMA(&huart6, rx6Buffer, 128);
 }
 
-/* ======================== 应用层使用示例 ======================== */
+/* ======================== 应用层使用示例（引擎层方式）======================== */
 
 /**
  * @brief 应用任务 — 演示电机控制流程
@@ -226,3 +206,89 @@ int main(void) {
 
 	for (;;);
 }
+
+/* ======================== 移植接口实现 ======================== */
+
+void zdt_v5_port_send(uint8_t *cmd, uint8_t len) {
+	extern UART_HandleTypeDef huart6;
+	HAL_UART_Transmit(&huart6, cmd, len, 100);
+}
+
+/* 串口 DMA 接收完成回调 — 由 HAL 中断调用 */
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
+	if (huart->Instance == USART6) {
+		extern uint8_t rx6Buffer[128];
+		RxBuf_t rx_buf;
+		memcpy(rx_buf.data, rx6Buffer, Size);
+		rx_buf.len = Size;
+
+		/* 将接收数据放入队列（ISR 安全版本）*/
+		osMessageQueuePut(rx_queue, &rx_buf, 0, 0);
+
+		/* 重新启动 DMA 接收 */
+		HAL_UARTEx_ReceiveToIdle_DMA(&huart6, rx6Buffer, 128);
+	}
+}
+
+#else
+
+/* ======================== ONLY_DRIVER 模式：直接调用驱动层 API ======================== */
+
+/**
+ * @brief 应用任务 — 演示电机控制流程（驱动层方式）
+ */
+void App_Task(void *argument) {
+	(void)argument;
+
+	osDelay(500);	// 等待系统就绪
+
+	/* 使能电机 1 */
+	ZDT_V5_En_Control(1, true, false);
+	osDelay(100);
+
+	/* 速度模式：正转 500 RPM，加速度 200 */
+	ZDT_V5_Vel_Control(1, 0, 500, 200, false);
+	osDelay(3000);
+
+	/* 停止 */
+	ZDT_V5_Stop(1, false);
+	osDelay(500);
+
+	/* 位置模式：相对运动 +2000 脉冲，速度 300 RPM */
+	ZDT_V5_Pos_Control(1, 0, 300, 200, 0, 2000, false, false);
+
+	for (;;) {
+		osDelay(1000);
+	}
+}
+
+/* ======================== 系统入口 ======================== */
+
+int main(void) {
+	HAL_Init();
+	SystemClock_Config();
+
+	/* 初始化串口（HAL 库函数）*/
+	MX_USART6_UART_Init();
+
+	/* 启动 DMA 接收 */
+	extern uint8_t rx6Buffer[128];
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart6, rx6Buffer, 128);
+
+	osKernelInitialize();
+
+	osThreadNew(App_Task, NULL, NULL);
+
+	osKernelStart();
+
+	for (;;);
+}
+
+/* ======================== 移植接口实现 ======================== */
+
+void zdt_v5_port_send(uint8_t *cmd, uint8_t len) {
+	extern UART_HandleTypeDef huart6;
+	HAL_UART_Transmit(&huart6, cmd, len, 100);
+}
+
+#endif

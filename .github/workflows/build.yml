@@ -50,3 +50,17 @@ jobs:
           arm-none-eabi-gcc -c -std=c99 -Wall -Wextra -Werror \
             -I. -Icore -Idrv \
             drv/zdt_v5_engine.c  -o /dev/null
+
+      - name: 编译检查（仅驱动层）
+        run: |
+          cp ci/stubs/zdt_v5_cfg.h  zdt_v5_cfg.h
+          cp ci/stubs/zdt_v5_port.h .
+          cp ci/stubs/zdt_v5_port.c .
+
+          # 启用 ONLY_DRIVER 模式
+          sed -i 's/#define ONLY_DRIVER                        0/#define ONLY_DRIVER                        1/' zdt_v5_cfg.h
+
+          # 仅编译驱动层，引擎层不应被编译
+          arm-none-eabi-gcc -c -std=c99 -Wall -Wextra -Werror \
+            -I. -Icore -Idrv \
+            drv/zdt_v5_drv.c     -o /dev/null

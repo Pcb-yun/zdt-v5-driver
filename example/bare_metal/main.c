@@ -14,24 +14,22 @@
  */
 
 #include "zdt_v5_drv.h"
+#if !ONLY_DRIVER
 #include "zdt_v5_engine.h"
 
 /* 电机状态数组（由引擎层使用） */
 static MotorStatus_t motors[MOTOR_NUM];
+#endif
 
 /* 串口接收缓冲区 */
 #define RX_BUF_SIZE 128
 static uint8_t rx_buf[RX_BUF_SIZE];
 static uint8_t rx_len = 0;
 
+#if !ONLY_DRIVER
 /* 模拟串口接收回调 — 由中断/DMA 调用 */
 void uart_rx_callback(uint8_t *data, uint8_t len) {
 	ZDT_V5_Receive(data, len, motors);
-}
-
-/* 简单的延时函数（阻塞，可根据平台替换） */
-static void delay_ms(uint32_t ms) {
-	for (volatile uint32_t i = 0; i < ms * 1000; i++);
 }
 
 /* 发送电机命令的辅助函数 */
@@ -96,6 +94,34 @@ static void motor_calibrate(uint8_t id) {
 	cmd.type.trigger.type = TRIG_ENCODER_CALIB;
 	motor_send_cmd(&cmd);
 }
+#else
+/* ONLY_DRIVER 模式：直接调用驱动层 API */
+
+static void motor_enable(uint8_t id, bool enable) {
+	ZDT_V5_En_Control(id, enable, false);
+}
+
+static void motor_velocity(uint8_t id, uint8_t dir, uint16_t vel, uint16_t acc) {
+	ZDT_V5_Vel_Control(id, dir, vel, acc, false);
+}
+
+static void motor_position(uint8_t id, uint8_t dir, uint16_t vel, uint16_t acc, int32_t target, uint8_t mode) {
+	ZDT_V5_Pos_Control(id, dir, vel, acc, 0, (uint32_t)target, (mode == 1), false);
+}
+
+static void motor_stop(uint8_t id) {
+	ZDT_V5_Stop(id, false);
+}
+
+static void motor_calibrate(uint8_t id) {
+	ZDT_V5_Trig_Encoder_Cal(id);
+}
+#endif
+
+/* 简单的延时函数（阻塞，可根据平台替换） */
+static void delay_ms(uint32_t ms) {
+	for (volatile uint32_t i = 0; i < ms * 1000; i++);
+}
 
 /**
  * @brief 主函数
@@ -135,11 +161,13 @@ int main(void) {
 
 	/***** 主循环 *****/
 	while (1) {
+#if !ONLY_DRIVER
 		/* 处理串口接收数据（由中断填充 rx_buf/rx_len）*/
 		if (rx_len > 0) {
 			ZDT_V5_Receive(rx_buf, rx_len, motors);
 			rx_len = 0;
 		}
+#endif
 
 		/* 用户的其他逻辑 */
 	}
