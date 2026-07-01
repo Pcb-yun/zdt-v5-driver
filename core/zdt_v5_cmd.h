@@ -28,6 +28,124 @@
 #include "zdt_v5_proto.h"
 #include "zdt_v5_cfg.h"
 
+/**
+ * @brief 系统状态参数枚举（驱动层和引擎层共用）
+ */
+typedef enum {
+	S_NULL = 0, // 无指令
+#if MOTOR_STATUS_READ_BATCH
+	S_BATCH,	// 批量读取
+#endif
+#if MOTOR_STATUS_BUS_VOLTAGE
+	S_VBUS,    // 读取总线电压
+#endif
+#if MOTOR_STATUS_PHASE_CURRENT
+	S_CPHA,   // 读取相电流
+#endif
+#if MOTOR_STATUS_ENCODER_VALUE
+	S_ENCL,  // 读取经过线性化校准后的编码器值
+#endif
+#if MOTOR_STATUS_TARGET_POS
+	S_TPOS,   // 读取电机目标位置
+#endif
+#if MOTOR_STATUS_SET_POS
+	S_SPOS,   // 读取电机实时设定的目标位置
+#endif
+#if MOTOR_STATUS_SPEED
+	S_VEL,   // 读取电机实时转速
+#endif
+#if MOTOR_STATUS_REAL_POS
+	S_CPOS,   // 读取电机实时位置
+#endif
+#if MOTOR_STATUS_POS_ERROR
+	S_PERR,   // 读取电机位置误差
+#endif
+#if MOTOR_STATUS_MOTOR_FLAGS
+	S_FLAG,   // 读取电机状态标志位
+#endif
+#if MOTOR_STATUS_HOME_FLAGS
+	S_OFLAG,   // 读取回零状态标志位
+#endif
+#if MOTOR_STATUS_BUS_CURRENT
+	S_CBUS,    // 读取总线电流
+#endif
+#if MOTOR_STATUS_TEMPERATURE
+	S_TEMP,   // 读取电机实时温度
+#endif
+#if MOTOR_STATUS_FLAGS_COMBINED
+	S_OAF,   // 读取电机状态标志位 + 回零状态标志位（组合）
+#endif
+#if MOTOR_STATUS_BATTERY_VOLTAGE
+	S_VBAT,   // 读取多圈编码器电池电压
+#endif
+#if MOTOR_STATUS_INPUT_PULSES
+	S_CLKI,   // 读取输入脉冲数
+#endif
+#if MOTOR_STATUS_PIN_STATUS
+	S_PIN,   // 读取引脚IO电平状态
+#endif
+} SysParams_t;
+
+/**
+ * @brief 驱动配置参数枚举（驱动层和引擎层共用）
+ */
+typedef enum {
+	D_NULL = 0, // 无指令
+#if MOTOR_DRIVER_READ_BATCH
+	D_BATCH,	// 批量读取
+#endif
+#if MOTOR_DRIVER_POS_WINDOW
+	D_POS_WINDOW,     // 位置到达窗口
+#endif
+#if MOTOR_DRIVER_HOME
+	D_HOME,           // 读取回零参数
+#endif
+} DriverParams_t;
+
+/**
+ * @brief 电机控制参数枚举（驱动层和引擎层共用）
+ */
+typedef enum {
+	C_NULL = 0, // 无指令
+#if MOTOR_PID_READ
+	C_PID,            // 读取PID参数
+#endif
+#if MOTOR_INTEGRAL_LIMIT_READ
+	C_INTEGRAL_LIMIT, // 读取积分限幅/刚性系数
+#endif
+#if MOTOR_PROTECT_THRESHOLD_READ
+	C_PROTECT_THRESHOLD, // 读取过热过流保护阈值
+#endif
+#if MOTOR_COLLISION_ANGLE_READ
+	C_COLLISION_ANGLE, // 读取碰撞回零返回角度
+#endif
+#if MOTOR_HEARTBEAT_READ
+	C_HEARTBEAT,      // 读取心跳保护时间
+#endif
+} CtrlParams_t;
+
+/**
+ * @brief 设备信息与特殊功能枚举（驱动层和引擎层共用）
+ */
+typedef enum {
+	I_NULL = 0, // 无指令
+#if MOTOR_READ_VERSION
+	I_VERSION,        // 读取固件版本和硬件版本
+#endif
+#if MOTOR_READ_PHASE_PARAMS
+	I_PHASE_PARAMS,   // 读取相电阻和相电感
+#endif
+#if MOTOR_READ_OPTION_PARAMS
+	I_OPTION,         // 读取选项参数状态
+#endif
+#if MOTOR_BROADCAST_READ_ID
+	I_ID,             // 广播读取ID地址
+#endif
+#if MOTOR_DRIVER_DMX512
+	I_DMX512,         // DMX512协议参数
+#endif
+} DeviceInfo_t;
+
 #if !ONLY_DRIVER
 
 /**
@@ -363,64 +481,6 @@ typedef enum {
 } MotorParamType_t;
 
 /**
- * @brief 系统状态参数枚举
- */
-typedef enum {
-	S_NULL = 0, // 无指令
-#if MOTOR_STATUS_READ_BATCH
-	S_BATCH,	// 批量读取
-#endif
-#if MOTOR_STATUS_BUS_VOLTAGE
-	S_VBUS,    // 读取总线电压
-#endif
-#if MOTOR_STATUS_PHASE_CURRENT
-	S_CPHA,   // 读取相电流
-#endif
-#if MOTOR_STATUS_ENCODER_VALUE
-	S_ENCL,  // 读取经过线性化校准后的编码器值
-#endif
-#if MOTOR_STATUS_TARGET_POS
-	S_TPOS,   // 读取电机目标位置
-#endif
-#if MOTOR_STATUS_SET_POS
-	S_SPOS,   // 读取电机实时设定的目标位置
-#endif
-#if MOTOR_STATUS_SPEED
-	S_VEL,   // 读取电机实时转速
-#endif
-#if MOTOR_STATUS_REAL_POS
-	S_CPOS,   // 读取电机实时位置
-#endif
-#if MOTOR_STATUS_POS_ERROR
-	S_PERR,   // 读取电机位置误差
-#endif
-#if MOTOR_STATUS_MOTOR_FLAGS
-	S_FLAG,   // 读取电机状态标志位
-#endif
-#if MOTOR_STATUS_HOME_FLAGS
-	S_OFLAG,   // 读取回零状态标志位
-#endif
-#if MOTOR_STATUS_BUS_CURRENT
-	S_CBUS,    // 读取总线电流
-#endif
-#if MOTOR_STATUS_TEMPERATURE
-	S_TEMP,   // 读取电机实时温度
-#endif
-#if MOTOR_STATUS_FLAGS_COMBINED
-	S_OAF,   // 读取电机状态标志位 + 回零状态标志位（组合）
-#endif
-#if MOTOR_STATUS_BATTERY_VOLTAGE
-	S_VBAT,   // 读取多圈编码器电池电压
-#endif
-#if MOTOR_STATUS_INPUT_PULSES
-	S_CLKI,   // 读取输入脉冲数
-#endif
-#if MOTOR_STATUS_PIN_STATUS
-	S_PIN,   // 读取引脚IO电平状态
-#endif
-} SysParams_t;
-
-/**
  * @brief 电机参数设置命令结构体
  */
 typedef struct {
@@ -606,66 +666,6 @@ typedef struct {
 		} dummy;
 	} p;
 } MotorParamWrite_t;
-
-/**
- * @brief 驱动配置参数枚举
- */
-typedef enum {
-	D_NULL = 0, // 无指令
-#if MOTOR_DRIVER_READ_BATCH
-	D_BATCH,	// 批量读取
-#endif
-#if MOTOR_DRIVER_POS_WINDOW
-	D_POS_WINDOW,     // 位置到达窗口
-#endif
-#if MOTOR_DRIVER_HOME
-	D_HOME,           // 读取回零参数
-#endif
-} DriverParams_t;
-
-/**
- * @brief 电机控制参数枚举
- */
-typedef enum {
-	C_NULL = 0, // 无指令
-#if MOTOR_PID_READ
-	C_PID,            // 读取PID参数
-#endif
-#if MOTOR_INTEGRAL_LIMIT_READ
-	C_INTEGRAL_LIMIT, // 读取积分限幅/刚性系数
-#endif
-#if MOTOR_PROTECT_THRESHOLD_READ
-	C_PROTECT_THRESHOLD, // 读取过热过流保护阈值
-#endif
-#if MOTOR_COLLISION_ANGLE_READ
-	C_COLLISION_ANGLE, // 读取碰撞回零返回角度
-#endif
-#if MOTOR_HEARTBEAT_READ
-	C_HEARTBEAT,      // 读取心跳保护时间
-#endif
-} CtrlParams_t;
-
-/**
- * @brief 设备信息与特殊功能枚举
- */
-typedef enum {
-	I_NULL = 0, // 无指令
-#if MOTOR_READ_VERSION
-	I_VERSION,        // 读取固件版本和硬件版本
-#endif
-#if MOTOR_READ_PHASE_PARAMS
-	I_PHASE_PARAMS,   // 读取相电阻和相电感
-#endif
-#if MOTOR_READ_OPTION_PARAMS
-	I_OPTION,         // 读取选项参数状态
-#endif
-#if MOTOR_BROADCAST_READ_ID
-	I_ID,             // 广播读取ID地址
-#endif
-#if MOTOR_DRIVER_DMX512
-	I_DMX512,         // DMX512协议参数
-#endif
-} DeviceInfo_t;
 
 /**
  * @brief 参数读取命令结构体
