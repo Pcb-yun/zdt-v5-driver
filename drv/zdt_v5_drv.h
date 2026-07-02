@@ -27,7 +27,6 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include "zdt_v5_port.h"
 #include "zdt_v5_cmd.h"
 
 #define ZDT_V5_SYS_READ_ENABLE \

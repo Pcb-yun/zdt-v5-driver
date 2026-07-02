@@ -21,6 +21,7 @@
  */
 
 #include "zdt_v5_engine.h"
+#include "zdt_v5_port.h"
 #include "zdt_v5_drv.h"
 
 #if !ONLY_DRIVER
