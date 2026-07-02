@@ -27,10 +27,7 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include <stdint.h>
-#include <stdbool.h>
 #include "zdt_v5_port.h"
-#include "zdt_v5_cfg.h"
 #include "zdt_v5_cmd.h"
 
 #define ZDT_V5_SYS_READ_ENABLE \

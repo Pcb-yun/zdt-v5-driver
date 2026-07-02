@@ -27,8 +27,6 @@
 extern "C" {
 #endif /* __cplusplus */
 
-#include <stdint.h>
-#include <stdbool.h>
 #include "zdt_v5_cmd.h"
 
 #if !ONLY_DRIVER
