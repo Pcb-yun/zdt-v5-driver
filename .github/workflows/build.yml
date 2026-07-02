@@ -18,7 +18,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcc-arm-none-eabi
 
-      - name: 编译检查（core + drv）
+      - name: 编译检查（完整模式 - Emm 固件）
         run: |
           # 使用 CI 专用配置和移植接口替换用户模板
           cp ci/stubs/zdt_v5_cfg.h  .
@@ -34,9 +34,9 @@ jobs:
             -I. -Icore -Idrv \
             drv/zdt_v5_engine.c  -o /dev/null
 
-      - name: 编译检查（X 固件）
+      - name: 编译检查（完整模式 - X 固件）
         run: |
-          cp ci/stubs/zdt_v5_cfg.h  zdt_v5_cfg.h
+          cp ci/stubs/zdt_v5_cfg.h  .
           cp ci/stubs/zdt_v5_port.h .
           cp ci/stubs/zdt_v5_port.c .
 
@@ -51,9 +51,9 @@ jobs:
             -I. -Icore -Idrv \
             drv/zdt_v5_engine.c  -o /dev/null
 
-      - name: 编译检查（仅驱动层）
+      - name: 编译检查（仅驱动层 - Emm 固件）
         run: |
-          cp ci/stubs/zdt_v5_cfg.h  zdt_v5_cfg.h
+          cp ci/stubs/zdt_v5_cfg.h  .
           cp ci/stubs/zdt_v5_port.h .
           cp ci/stubs/zdt_v5_port.c .
 
