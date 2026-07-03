@@ -9,16 +9,16 @@
  */
 
 #include "zdt_v5_drv.h"
-#if !ONLY_DRIVER
+#if !ZDT_ONLY_DRIVER
 #include "zdt_v5_engine.h"
 #endif
 #include "cmsis_os2.h"
 #include <string.h>
 
-#if !ONLY_DRIVER
+#if !ZDT_ONLY_DRIVER
 /* ======================== 电机状态 ======================== */
 
-static MotorStatus_t motors[MOTOR_NUM];
+static MotorStatus_t motors[ZDT_STEP_NUM];
 
 /* ======================== RTOS 资源 ======================== */
 
@@ -80,7 +80,7 @@ void Update_Task(void *argument) {
 	osDelay(100);	// 等待系统就绪
 
 	for (;;) {
-		for (uint8_t i = 0; i < MOTOR_NUM; i++) {
+		for (uint8_t i = 0; i < ZDT_STEP_NUM; i++) {
 			if (motors[i].motor_id == 0) continue;	// 跳过未注册的槽位
 			cmd.motor_id = motors[i].motor_id;
 			cmd.op_type = OP_PARAM_READ;
@@ -249,7 +249,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 
 #else
 
-/* ======================== ONLY_DRIVER 模式：直接调用驱动层 API ======================== */
+/* ======================== ZDT_ONLY_DRIVER 模式：直接调用驱动层 API ======================== */
 
 /**
  * @brief 应用任务 — 演示电机控制流程（驱动层方式）

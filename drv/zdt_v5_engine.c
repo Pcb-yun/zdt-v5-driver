@@ -24,7 +24,7 @@
 #include "zdt_v5_port.h"
 #include "zdt_v5_drv.h"
 
-#if !ONLY_DRIVER
+#if !ZDT_ONLY_DRIVER
 
 #include <stdlib.h>
 #include <string.h>
@@ -34,7 +34,7 @@ static void Motor_Process_Trigger(uint8_t motor_id, MotorTrigger_t *trigger);
 static void Motor_Process_Param_Read(uint8_t motor_id, MotorParamRead_t *read);
 static void Motor_Process_Param_Write(uint8_t motor_id, MotorParamWrite_t *write);
 
-static MotorStatus_t *motor_registry[MOTOR_NUM];
+static MotorStatus_t *motor_registry[ZDT_STEP_NUM];
 static uint8_t motor_registry_count = 0;
 
 /**
@@ -46,7 +46,7 @@ static uint8_t motor_registry_count = 0;
 bool ZDT_V5_Register_Motor(uint8_t id, MotorStatus_t *status) {
 	if (status == NULL) return false;
 	if (id == 0) return false;
-	if (motor_registry_count >= MOTOR_NUM) return false;
+	if (motor_registry_count >= ZDT_STEP_NUM) return false;
 
 	for (uint8_t i = 0; i < motor_registry_count; i++) {
 		if (motor_registry[i]->motor_id == id) return false;
@@ -705,4 +705,4 @@ static void Motor_Process_Param_Write(uint8_t motor_id, MotorParamWrite_t *write
 	}
 }
 
-#endif /* !ONLY_DRIVER */
+#endif /* !ZDT_ONLY_DRIVER */

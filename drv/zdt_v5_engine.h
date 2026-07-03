@@ -29,7 +29,7 @@ extern "C" {
 
 #include "zdt_v5_cmd.h"
 
-#if !ONLY_DRIVER
+#if !ZDT_ONLY_DRIVER
 
 /**
  * @brief 电机状态结构体
@@ -306,5 +306,5 @@ void ZDT_V5_Process_Cmd(MotorCmd_t *cmd);
 }
 #endif /* __cplusplus */
 
-#endif /* !ONLY_DRIVER */
+#endif /* !ZDT_ONLY_DRIVER */
 #endif /* __ZDT_V5_ENGINE_H__ */

@@ -146,7 +146,7 @@ typedef enum {
 #endif
 } DeviceInfo_t;
 
-#if !ONLY_DRIVER
+#if !ZDT_ONLY_DRIVER
 
 /**
  * @brief 电机命令操作类型枚举
@@ -693,5 +693,5 @@ typedef struct {
 	} type;
 } MotorCmd_t;
 
-#endif /* !ONLY_DRIVER */
+#endif /* !ZDT_ONLY_DRIVER */
 #endif /* __ZDT_V5_CMD_H__ */

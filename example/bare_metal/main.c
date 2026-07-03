@@ -14,11 +14,11 @@
  */
 
 #include "zdt_v5_drv.h"
-#if !ONLY_DRIVER
+#if !ZDT_ONLY_DRIVER
 #include "zdt_v5_engine.h"
 
 /* 电机状态数组（由引擎层使用） */
-static MotorStatus_t motors[MOTOR_NUM];
+static MotorStatus_t motors[ZDT_STEP_NUM];
 #endif
 
 /* 串口接收缓冲区 */
@@ -26,7 +26,7 @@ static MotorStatus_t motors[MOTOR_NUM];
 static uint8_t rx_buf[RX_BUF_SIZE];
 static uint8_t rx_len = 0;
 
-#if !ONLY_DRIVER
+#if !ZDT_ONLY_DRIVER
 /* 模拟串口接收回调 — 由中断/DMA 调用 */
 void uart_rx_callback(uint8_t *data, uint8_t len) {
 	ZDT_V5_Receive(data, len);
@@ -95,7 +95,7 @@ static void motor_calibrate(uint8_t id) {
 	motor_send_cmd(&cmd);
 }
 #else
-/* ONLY_DRIVER 模式：直接调用驱动层 API */
+/* ZDT_ONLY_DRIVER 模式：直接调用驱动层 API */
 
 static void motor_enable(uint8_t id, bool enable) {
 	ZDT_V5_En_Control(id, enable, false);
@@ -157,7 +157,7 @@ int main(void) {
 	// uart_init(115200);          // 初始化串口
 	// uart_set_rx_callback(uart_rx_callback); // 注册接收回调
 
-#if !ONLY_DRIVER
+#if !ZDT_ONLY_DRIVER
 	/* 注册电机到引擎层（ID 可任意，无需连续） */
 	ZDT_V5_Register_Motor(1, &motors[0]);
 #endif
@@ -186,7 +186,7 @@ int main(void) {
 
 	/***** 主循环 *****/
 	while (1) {
-#if !ONLY_DRIVER
+#if !ZDT_ONLY_DRIVER
 		/* 处理串口接收数据（由中断填充 rx_buf/rx_len）*/
 		if (rx_len > 0) {
 			ZDT_V5_Receive(rx_buf, rx_len);

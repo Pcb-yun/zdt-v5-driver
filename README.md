@@ -25,7 +25,7 @@
 | 功能覆盖    | 使能/速度/位置/力矩/停止/同步/回零/参数读写/编码器校准等全部功能 |
 | 条件编译    | 约 100 个配置开关，精确控制每个功能的编译              |
 | 资源占用    | 配置开关关闭的功能完全不占用代码空间                   |
-| 多电机     | 通过 `MOTOR_NUM` 配置，注册制支持任意 ID（无需连续）  |
+| 多电机     | 通过 `ZDT_STEP_NUM` 配置，注册制支持任意 ID（无需连续）  |
 | RTOS 适配 | 命令队列 + 接收队列 + 状态轮询任务架构，开箱即用          |
 | 无平台依赖   | 仅需标准 C 库，任何 MCU 架构均可移植               |
 
@@ -44,14 +44,14 @@
 │
 ├── drv/                     # 驱动协议层
 │   ├── zdt_v5_drv.h/.c     # 驱动 API（命令打包，条件编译裁剪）
-│   └── zdt_v5_engine.h/.c  # 引擎层（注册制管理、响应解析、命令分发，可通过 ONLY_DRIVER 关闭）
+│   └── zdt_v5_engine.h/.c  # 引擎层（注册制管理、响应解析、命令分发，可通过 ZDT_ONLY_DRIVER 关闭）
 │
 ├── template/                # 移植模板（用户复制到工程中修改）
 │   ├── zdt_v5_cfg_template.h   # 配置文件模板
 │   ├── zdt_v5_port_template.h  # 移植接口模板
 │   └── zdt_v5_port_template.c  # 移植实现模板
 │
-├── example/                 # 使用示例（支持 ONLY_DRIVER 模式）
+├── example/                 # 使用示例（支持 ZDT_ONLY_DRIVER 模式）
 │   ├── bare_metal/          # 裸机示例
 │   └── freertos/            # FreeRTOS 示例
 │
@@ -64,7 +64,7 @@
 
 **架构选择：**
 
-| 模式   | `ONLY_DRIVER` | 包含层                 | 适用场景                  |
+| 模式   | `ZDT_ONLY_DRIVER` | 包含层                 | 适用场景                  |
 | ---- | ------------- | ------------------- | --------------------- |
 | 完整模式 | `0`（默认）       | core + drv + engine | RTOS 环境、需要状态解析、复杂命令控制 |
 | 轻量模式 | `1`           | core + drv          | 裸机环境、资源受限、简单控制逻辑      |
@@ -87,14 +87,14 @@
 
 - 选择固件版本（`CURRENT_FIRMWARE`）
 - 选择电机型号（`CURRENT_MOTOR_MODEL`）
-- 设置电机数量（`MOTOR_NUM`）
+- 设置电机数量（`ZDT_STEP_NUM`）
 - 按需开启功能开关
 
 ```c
 #define CURRENT_FIRMWARE         FIRMWARE_EMM
 #define CURRENT_MOTOR_MODEL      MOTOR_MODEL_X42S
-#define MOTOR_NUM                4
-#define ONLY_DRIVER              0   // 仅使用驱动层，不使用引擎层（见下文）
+#define ZDT_STEP_NUM                4
+#define ZDT_ONLY_DRIVER              0   // 仅使用驱动层，不使用引擎层（见下文）
 
 // 按需开启功能（0=关闭，1=开启）
 #define MOTOR_CMD_ENABLE         1   // 使能控制
@@ -105,7 +105,7 @@
 
 #### 1.1 仅驱动层模式（ONLY\_DRIVER）
 
-设置 `ONLY_DRIVER = 1` 可启用轻量级模式：
+设置 `ZDT_ONLY_DRIVER = 1` 可启用轻量级模式：
 
 - **不编译引擎层** — `zdt_v5_engine.c/.h` 完全不参与编译，减小代码体积
 - **直接调用驱动层 API** — 使用 `ZDT_V5_En_Control()`、`ZDT_V5_Vel_Control()` 等函数
@@ -149,7 +149,7 @@ void zdt_v5_port_send(uint8_t *cmd, uint8_t len) {
 ```c
 #include "zdt_v5_engine.h"
 
-static MotorStatus_t motors[MOTOR_NUM];
+static MotorStatus_t motors[ZDT_STEP_NUM];
 
 /* 注册电机（ID 可任意，如 1、3、7） */
 ZDT_V5_Register_Motor(1, &motors[0]);
