@@ -22,6 +22,7 @@
 
 #include "zdt_v5_drv.h"
 #include "zdt_v5_port.h"
+#include <stddef.h>
 
 /******************** 系统状态参数 *********************/
 
