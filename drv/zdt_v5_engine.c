@@ -551,7 +551,7 @@ static void Motor_Process_Ctrl(uint8_t motor_id, MotorCtrl_t *ctrl) {
 	    case CTRL_SYNC: ZDT_V5_Synchronous_Motion(motor_id); break;
 #endif
 #if MOTOR_MULTI_CMD
-	    case CTRL_MULTI: if (!ZDT_V5_Multi_Send(&ctrl->p.multi.cmd)) ZDT_V5_LOG("Failed to send multi command"); break;
+	    case CTRL_MULTI: if (!ZDT_V5_Multi_Send(&ctrl->p.multi.cmd)) { ZDT_V5_LOG("Failed to send multi command"); } break;
 #endif
 #if MOTOR_POS_MODE_FAST
 		case CTRL_FAST_SET: ZDT_V5_Fast_Set_Param(motor_id, ctrl->p.fast_set.vel, ctrl->p.fast_set.acc,
