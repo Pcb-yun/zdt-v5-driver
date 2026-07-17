@@ -117,12 +117,12 @@ void ZDT_V5_Pos_Control_Direct(uint8_t addr, uint8_t dir, uint16_t vel, uint32_t
 void ZDT_V5_Pos_Control_Direct_With_Limit(uint8_t addr, uint8_t dir, uint16_t vel, uint32_t pos, uint8_t mode, bool snF, uint16_t max_current);
 #endif
 
-#if MOTOR_POS_MODE_TRAPEZOIDAL
+#if MOTOR_POS_MODE
 void ZDT_V5_Pos_Control(uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, uint16_t dec, uint32_t clk, bool raF, bool snF);
 #endif
 
-#if MOTOR_POS_MODE_TRAPEZOIDAL_LIMIT
-void ZDT_V5_Pos_Control_Trapezoidal_With_Limit(uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, uint16_t dec, uint32_t pos, uint8_t mode, bool snF, uint16_t max_current);
+#if MOTOR_POS_MODE_LIMIT
+void ZDT_V5_Pos_Control_With_Limit(uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, uint16_t dec, uint32_t pos, uint8_t mode, bool snF, uint16_t max_current);
 #endif
 
 #if MOTOR_TORQUE_MODE
@@ -139,10 +139,6 @@ void ZDT_V5_Stop(uint8_t addr, bool snF);
 
 #if MOTOR_SYNC_TRIGGER
 void ZDT_V5_Synchronous_Motion(uint8_t addr);
-#endif
-
-#if MOTOR_MULTI_CMD
-void ZDT_V5_Multi_Motor_Cmd(uint8_t addr, uint8_t len, uint8_t *cmd_data);
 #endif
 
 #if MOTOR_POS_MODE_FAST
@@ -247,6 +243,45 @@ void ZDT_V5_Modify_Lock_Params(uint8_t addr, bool svF, uint8_t lock_level);
 #if MOTOR_DMX512_WRITE
 void ZDT_V5_Modify_DMX512_Params(uint8_t addr, bool svF, uint16_t tch, uint8_t nch, uint8_t mode, uint16_t vel, uint16_t acc, uint16_t vel_step, uint32_t pos_step);
 #endif
+
+/******************** 多机指令构造 *********************/
+
+#if MOTOR_MULTI_CMD
+bool ZDT_V5_Multi_Reset(ZDT_V5_Multi_Cmd_t *cmd);
+bool ZDT_V5_Multi_Send(ZDT_V5_Multi_Cmd_t *cmd);
+
+#if MOTOR_VELOCITY_MODE
+bool ZDT_V5_Multi_Vel_Ctrl(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, bool snF);
+#endif
+
+#if MOTOR_VELOCITY_MODE_LIMIT
+bool ZDT_V5_Multi_Vel_Ctrl_Limit(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, bool snF, uint16_t max_current);
+#endif
+
+#if MOTOR_POS_MODE
+bool ZDT_V5_Multi_Pos_Ctrl(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, uint16_t dec, uint32_t clk, bool raF, bool snF);
+#endif
+
+#if MOTOR_POS_MODE_LIMIT
+bool ZDT_V5_Multi_Pos_Ctrl_Limit(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, uint16_t dec, uint32_t pos, uint8_t mode, bool snF, uint16_t max_current);
+#endif
+
+#if MOTOR_POS_MODE_DIRECT
+bool ZDT_V5_Multi_Pos_Ctrl_Direct(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint32_t pos, uint8_t mode, bool snF);
+#endif
+
+#if MOTOR_POS_MODE_DIRECT_LIMIT
+bool ZDT_V5_Multi_Pos_Ctrl_Direct_Limit(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint32_t pos, uint8_t mode, bool snF, uint16_t max_current);
+#endif
+
+#if MOTOR_TORQUE_MODE
+bool ZDT_V5_Multi_Torque_Ctrl(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t slope, uint16_t current, bool snF);
+#endif
+
+#if MOTOR_TORQUE_MODE_LIMIT
+bool ZDT_V5_Multi_Torque_Ctrl_Limit(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t slope, uint16_t current, uint16_t max_vel, bool snF);
+#endif
+#endif /* MOTOR_MULTI_CMD */
 
 #ifdef __cplusplus
 }

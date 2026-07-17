@@ -478,7 +478,7 @@ void ZDT_V5_Receive(uint8_t *data, uint8_t len) {
 #if MOTOR_BROADCAST_READ_ID
         case CMD_BROADCAST_READ_ID: motor->is_online = true; break;
 #endif /* MOTOR_BROADCAST_READ_ID */
-		// 电机返回太快会出现粘包导致进入此行
+		// 电机返回太快会出现粘包导致进入此行，根据需要选择是否注释
 	    // default: ZDT_V5_LOG("Received motor response, but command unknown: id: %d, cmd: 0x%02X", motor_id, cmd_code); break;
 	}
 }
@@ -509,13 +509,13 @@ static void Motor_Process_Ctrl(uint8_t motor_id, MotorCtrl_t *ctrl) {
 	    case CTRL_ENABLE: ZDT_V5_En_Control(motor_id, ctrl->p.en.enable, ctrl->p.en.sync); break;
 #endif
 #if MOTOR_VELOCITY_MODE
-	    case CTRL_VELOCITY: ZDT_V5_Vel_Control(motor_id, ctrl->p.vel.dir, ctrl->p.vel.vel, ctrl->p.vel.acc, ctrl->p.vel.sync); break;
+	    case CTRL_VEL: ZDT_V5_Vel_Control(motor_id, ctrl->p.vel.dir, ctrl->p.vel.vel, ctrl->p.vel.acc, ctrl->p.vel.sync); break;
 #endif
 #if MOTOR_VELOCITY_MODE_LIMIT
-	    case CTRL_VELOCITY_LIMIT: ZDT_V5_Vel_Control_With_Limit(motor_id, ctrl->p.vel.dir, ctrl->p.vel.vel, ctrl->p.vel.acc, ctrl->p.vel.sync, ctrl->p.vel.max_current); break;
+	    case CTRL_VEL_LIMIT: ZDT_V5_Vel_Control_With_Limit(motor_id, ctrl->p.vel.dir, ctrl->p.vel.vel, ctrl->p.vel.acc, ctrl->p.vel.sync, ctrl->p.vel.max_current); break;
 #endif
-#if MOTOR_POS_MODE_TRAPEZOIDAL
-	    case CTRL_POSITION: ZDT_V5_Pos_Control(motor_id, ctrl->p.pos.dir, ctrl->p.pos.vel, ctrl->p.pos.acc,
+#if MOTOR_POS_MODE
+	    case CTRL_POS: ZDT_V5_Pos_Control(motor_id, ctrl->p.pos.dir, ctrl->p.pos.vel, ctrl->p.pos.acc,
 #if CURRENT_FIRMWARE == FIRMWARE_X
 			    ctrl->p.pos.dec,
 #else
@@ -523,8 +523,8 @@ static void Motor_Process_Ctrl(uint8_t motor_id, MotorCtrl_t *ctrl) {
 #endif
 			    (uint32_t)ctrl->p.pos.target, ctrl->p.pos.mode, ctrl->p.pos.sync); break;
 #endif
-#if MOTOR_POS_MODE_TRAPEZOIDAL_LIMIT
-	    case CTRL_POS_TRAPEZOIDAL_LIMIT: ZDT_V5_Pos_Control_Trapezoidal_With_Limit(motor_id, ctrl->p.pos.dir, ctrl->p.pos.vel, ctrl->p.pos.acc,
+#if MOTOR_POS_MODE_LIMIT
+	    case CTRL_POS_LIMIT: ZDT_V5_Pos_Control_With_Limit(motor_id, ctrl->p.pos.dir, ctrl->p.pos.vel, ctrl->p.pos.acc,
 #if CURRENT_FIRMWARE == FIRMWARE_X
 			    ctrl->p.pos.dec,
 #else
@@ -551,18 +551,18 @@ static void Motor_Process_Ctrl(uint8_t motor_id, MotorCtrl_t *ctrl) {
 	    case CTRL_SYNC: ZDT_V5_Synchronous_Motion(motor_id); break;
 #endif
 #if MOTOR_MULTI_CMD
-        case CTRL_MULTI: ZDT_V5_Multi_Motor_Cmd(0x00, ctrl->p.multi.len, ctrl->p.multi.data); break;
+	    case CTRL_MULTI: if (!ZDT_V5_Multi_Send(&ctrl->p.multi.cmd)) ZDT_V5_LOG("Failed to send multi command"); break;
 #endif
 #if MOTOR_POS_MODE_FAST
-	case CTRL_FAST_SET: ZDT_V5_Fast_Set_Param(motor_id, ctrl->p.fast_set.vel, ctrl->p.fast_set.acc,
+		case CTRL_FAST_SET: ZDT_V5_Fast_Set_Param(motor_id, ctrl->p.fast_set.vel, ctrl->p.fast_set.acc,
 #if CURRENT_FIRMWARE == FIRMWARE_EMM
         0, 0,
 #elif CURRENT_FIRMWARE == FIRMWARE_X
         ctrl->p.fast_set.dec, ctrl->p.fast_set.max_current,
 #endif
         ctrl->p.fast_set.mode, ctrl->p.fast_set.sync); break;
-	case CTRL_FAST_SEND: ZDT_V5_Fast_Send_Pos(motor_id, ctrl->p.fast_send.pos); break;
-#endif /* MOTOR_POS_MODE_FAST */
+		case CTRL_FAST_SEND: ZDT_V5_Fast_Send_Pos(motor_id, ctrl->p.fast_send.pos); break;
+#endif
         case CTRL_NONE: default: ZDT_V5_LOG("Unknown or none control type: %d", ctrl->type); break;
 	}
 }
@@ -704,5 +704,59 @@ static void Motor_Process_Param_Write(uint8_t motor_id, MotorParamWrite_t *write
         case PARAM_NONE: default: ZDT_V5_LOG("Unknown or none param write type: %d", write->type); break;
 	}
 }
+
+#if MOTOR_MULTI_CMD
+/**
+ * @brief 处理多机指令构造器命令
+ * @param addr 电机地址
+ * @param multi 多机指令构造器控制结构体指针
+ * @param cmd 多机指令结构体指针
+ */
+void ZDT_V5_Process_Multi_Cmd(uint8_t addr, MotorMulti_t *multi, ZDT_V5_Multi_Cmd_t *cmd) {
+	if (multi == NULL || cmd == NULL || cmd->data == NULL)
+		return;
+
+	switch (multi->type) {
+		case MULTI_RESET: ZDT_V5_Multi_Reset(cmd); break;
+#if MOTOR_VELOCITY_MODE
+		case MULTI_VEL: ZDT_V5_Multi_Vel_Ctrl(cmd, addr, multi->p.vel.dir, multi->p.vel.vel, multi->p.vel.acc, multi->p.vel.snF); break;
+#endif
+#if MOTOR_VELOCITY_MODE_LIMIT
+		case MULTI_VEL_LIMIT: ZDT_V5_Multi_Vel_Ctrl_Limit(cmd, addr, multi->p.vel.dir, multi->p.vel.vel, multi->p.vel.acc, multi->p.vel.snF, multi->p.vel.max_current); break;
+#endif
+#if MOTOR_POS_MODE
+		case MULTI_POS: ZDT_V5_Multi_Pos_Ctrl(cmd, addr, multi->p.pos.dir, multi->p.pos.vel, multi->p.pos.acc,
+#if CURRENT_FIRMWARE == FIRMWARE_X
+					multi->p.pos.dec,
+#else
+					0,
+#endif
+					(uint32_t)multi->p.pos.target, multi->p.pos.mode, multi->p.pos.rsp); break;
+#endif
+#if MOTOR_POS_MODE_LIMIT
+		case MULTI_POS_LIMIT: ZDT_V5_Multi_Pos_Ctrl_Limit(cmd, addr, multi->p.pos.dir, multi->p.pos.vel, multi->p.pos.acc,
+#if CURRENT_FIRMWARE == FIRMWARE_X
+					multi->p.pos.dec,
+#else
+					0,
+#endif
+					(uint32_t)multi->p.pos.target, multi->p.pos.mode, multi->p.pos.rsp, multi->p.pos.max_current); break;
+#endif
+#if MOTOR_POS_MODE_DIRECT
+		case MULTI_POS_DIRECT: ZDT_V5_Multi_Pos_Ctrl_Direct(cmd, addr, multi->p.pos_dir.dir, multi->p.pos_dir.vel, (uint32_t)multi->p.pos_dir.target, multi->p.pos_dir.mode, multi->p.pos_dir.rsp); break;
+#endif
+#if MOTOR_POS_MODE_DIRECT_LIMIT
+		case MULTI_POS_DIRECT_LIMIT: ZDT_V5_Multi_Pos_Ctrl_Direct_Limit(cmd, addr, multi->p.pos_dir.dir, multi->p.pos_dir.vel, (uint32_t)multi->p.pos_dir.target, multi->p.pos_dir.mode, multi->p.pos_dir.rsp, multi->p.pos_dir.max_current); break;
+#endif
+#if MOTOR_TORQUE_MODE
+		case MULTI_TORQUE: ZDT_V5_Multi_Torque_Ctrl(cmd, addr, multi->p.torque.dir, multi->p.torque.slope, multi->p.torque.current, multi->p.torque.sync); break;
+#endif
+#if MOTOR_TORQUE_MODE_LIMIT
+		case MULTI_TORQUE_LIMIT: ZDT_V5_Multi_Torque_Ctrl_Limit(cmd, addr, multi->p.torque.dir, multi->p.torque.slope, multi->p.torque.current, multi->p.torque.max_vel, multi->p.torque.sync); break;
+#endif
+		default: return;
+	}
+}
+#endif
 
 #endif /* !ZDT_ONLY_DRIVER */

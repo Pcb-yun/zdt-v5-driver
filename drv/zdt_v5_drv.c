@@ -91,7 +91,7 @@ void ZDT_V5_Read_Sys_Params(uint8_t addr, SysParams_t s) {
 	cmd[i] = END_CODE; ++i;
 	zdt_v5_port_send(cmd, i);
 }
-#endif /* ZDT_V5_SYS_READ_ENABLE */
+#endif
 
 #if MOTOR_PERIODIC_RETURN
 /**
@@ -189,7 +189,7 @@ void ZDT_V5_Read_Driver_Params(uint8_t addr, DriverParams_t d) {
 	cmd[i] = END_CODE; ++i;
 	zdt_v5_port_send(cmd, i);
 }
-#endif /* ZDT_V5_DRV_READ_ENABLE */
+#endif
 
 /******************** 控制参数 *********************/
 
@@ -223,7 +223,7 @@ void ZDT_V5_Read_Ctrl_Params(uint8_t addr, CtrlParams_t c) {
 	cmd[i] = END_CODE; ++i;
 	zdt_v5_port_send(cmd, i);
 }
-#endif /* ZDT_V5_CTRL_READ_ENABLE */
+#endif
 
 #if MOTOR_PID_WRITE
 #if CURRENT_FIRMWARE == FIRMWARE_EMM
@@ -383,7 +383,7 @@ void ZDT_V5_Read_Device_Info_Params(uint8_t addr, DeviceInfo_t i) {
 	cmd[j] = END_CODE; ++j;
 	zdt_v5_port_send(cmd, j);
 }
-#endif /* ZDT_V5_INFO_READ_ENABLE */
+#endif
 
 /******************** 运动控制命令 *********************/
 
@@ -392,7 +392,7 @@ void ZDT_V5_Read_Device_Info_Params(uint8_t addr, DeviceInfo_t i) {
  * @brief 使能信号控制
  * @param addr 电机地址
  * @param state 使能状态,true为使能电机,false为关闭电机
- * @param snF 多机同步标志,false为不启用,true为启用
+ * @param snF 等待同步标志,false为不启用,true为启用
  */
 void ZDT_V5_En_Control(uint8_t addr, bool state, bool snF) {
 	uint8_t cmd[16] = {0};
@@ -408,7 +408,7 @@ void ZDT_V5_En_Control(uint8_t addr, bool state, bool snF) {
  * @param dir 方向,0为CW，其余值为CCW
  * @param vel 速度(RPM) 0-5000
  * @param acc 加速度(RPM/S或档位)
- * @param snF 多机同步标志,false为不启用,true为启用
+ * @param snF 等待同步标志,false为不启用,true为启用
  */
 void ZDT_V5_Vel_Control(uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, bool snF) {
 	uint8_t cmd[16] = {0};
@@ -434,7 +434,7 @@ void ZDT_V5_Vel_Control(uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, b
  * @param dir 方向,0为CW，其余值为CCW
  * @param vel 速度(RPM) 0-3000.0
  * @param acc 加速度(RPM/S) 0-65535
- * @param snF 多机同步标志,false为不启用,true为启用
+ * @param snF 等待同步标志,false为不启用,true为启用
  * @param max_current 最大电流(mA) 0-5000
  */
 void ZDT_V5_Vel_Control_With_Limit(uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, bool snF, uint16_t max_current) {
@@ -449,52 +449,9 @@ void ZDT_V5_Vel_Control_With_Limit(uint8_t addr, uint8_t dir, uint16_t vel, uint
 }
 #endif
 
-#if MOTOR_POS_MODE_DIRECT
+#if MOTOR_POS_MODE
 /**
- * @brief 直通限速位置模式控制（X固件）
- * @param addr 电机地址
- * @param dir 方向,0为CW，其余值为CCW
- * @param vel 速度(RPM) 0-3000.0
- * @param pos 位置角度(0.1°) 0- (2^32 - 1)
- * @param mode 运动模式:0-相对上一目标,1-绝对位置,2-相对当前位置
- * @param snF 多机同步标志,false为不启用,true为启用
- */
-void ZDT_V5_Pos_Control_Direct(uint8_t addr, uint8_t dir, uint16_t vel, uint32_t pos, uint8_t mode, bool snF) {
-	uint8_t cmd[16] = {0};
-	cmd[0] = addr; cmd[1] = CMD_POS_MODE_DIRECT; cmd[2] = dir;
-	cmd[3] = (uint8_t)(vel >> 8); cmd[4] = (uint8_t)(vel >> 0);
-	cmd[5] = (uint8_t)(pos >> 24); cmd[6] = (uint8_t)(pos >> 16); cmd[7] = (uint8_t)(pos >> 8); cmd[8] = (uint8_t)(pos >> 0);
-	cmd[9] = mode; cmd[10] = snF; cmd[11] = END_CODE;
-	zdt_v5_port_send(cmd, 12);
-}
-#endif
-
-#if MOTOR_POS_MODE_DIRECT_LIMIT
-/**
- * @brief 直通限速位置模式限电流控制（X固件增强版）
- * @param addr 电机地址
- * @param dir 方向,0为CW，其余值为CCW
- * @param vel 速度(RPM) 0-3000.0
- * @param pos 位置角度(0.1°) 0- (2^32 - 1)
- * @param mode 运动模式:0-相对上一目标,1-绝对位置,2-相对当前位置
- * @param snF 多机同步标志,false为不启用,true为启用
- * @param max_current 最大电流(mA) 0-5000
- */
-void ZDT_V5_Pos_Control_Direct_With_Limit(uint8_t addr, uint8_t dir, uint16_t vel, uint32_t pos, uint8_t mode, bool snF, uint16_t max_current) {
-	uint8_t cmd[16] = {0};
-	cmd[0] = addr; cmd[1] = CMD_POS_MODE_DIRECT_LIMIT; cmd[2] = dir;
-	cmd[3] = (uint8_t)(vel >> 8); cmd[4] = (uint8_t)(vel >> 0);
-	cmd[5] = (uint8_t)(pos >> 24); cmd[6] = (uint8_t)(pos >> 16); cmd[7] = (uint8_t)(pos >> 8); cmd[8] = (uint8_t)(pos >> 0);
-	cmd[9] = mode; cmd[10] = snF;
-	cmd[11] = (uint8_t)(max_current >> 8); cmd[12] = (uint8_t)(max_current >> 0);
-	cmd[13] = END_CODE;
-	zdt_v5_port_send(cmd, 14);
-}
-#endif
-
-#if MOTOR_POS_MODE_TRAPEZOIDAL
-/**
- * @brief 位置模式
+ * @brief 梯形曲线位置模式
  * @param addr 电机地址
  * @param dir 方向,0为CW，其余值为CCW
  * @param vel 速度(RPM) 0-5000
@@ -502,7 +459,7 @@ void ZDT_V5_Pos_Control_Direct_With_Limit(uint8_t addr, uint8_t dir, uint16_t ve
  * @param dec 减速度(仅X固件)
  * @param clk 脉冲数/角度 0- (2^32 - 1)
  * @param raF 相位/绝对标志,false为相对运动,true为绝对值运动
- * @param snF 多机同步标志,false为不启用,true为启用
+ * @param snF 等待同步标志,false为不启用,true为启用
  */
 void ZDT_V5_Pos_Control(uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, uint16_t dec, uint32_t clk, bool raF, bool snF) {
 	uint8_t cmd[16] = {0};
@@ -526,7 +483,7 @@ void ZDT_V5_Pos_Control(uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, u
 }
 #endif
 
-#if MOTOR_POS_MODE_TRAPEZOIDAL_LIMIT
+#if MOTOR_POS_MODE_LIMIT
 /**
  * @brief 梯形曲线位置模式限电流控制（X固件增强版）
  * @param addr 电机地址
@@ -536,10 +493,10 @@ void ZDT_V5_Pos_Control(uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, u
  * @param dec 减速度(RPM/S) 0-65535
  * @param pos 位置角度(0.1°) 0- (2^32 - 1)
  * @param mode 运动模式:0-相对上一目标,1-绝对位置,2-相对当前位置
- * @param snF 多机同步标志,false为不启用,true为启用
+ * @param snF 等待同步标志,false为不启用,true为启用
  * @param max_current 最大电流(mA) 0-5000
  */
-void ZDT_V5_Pos_Control_Trapezoidal_With_Limit(uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, uint16_t dec, uint32_t pos, uint8_t mode, bool snF, uint16_t max_current) {
+void ZDT_V5_Pos_Control_With_Limit(uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, uint16_t dec, uint32_t pos, uint8_t mode, bool snF, uint16_t max_current) {
 	uint8_t cmd[24] = {0};
 	cmd[0] = addr; cmd[1] = CMD_POS_MODE_TRAPEZOIDAL_LIMIT; cmd[2] = dir;
 	cmd[3] = (uint8_t)(acc >> 8); cmd[4] = (uint8_t)(acc >> 0);
@@ -553,6 +510,49 @@ void ZDT_V5_Pos_Control_Trapezoidal_With_Limit(uint8_t addr, uint8_t dir, uint16
 }
 #endif
 
+#if MOTOR_POS_MODE_DIRECT
+/**
+ * @brief 直通限速位置模式控制（X固件）
+ * @param addr 电机地址
+ * @param dir 方向,0为CW，其余值为CCW
+ * @param vel 速度(RPM) 0-3000.0
+ * @param pos 位置角度(0.1°) 0- (2^32 - 1)
+ * @param mode 运动模式:0-相对上一目标,1-绝对位置,2-相对当前位置
+ * @param snF 等待同步标志,false为不启用,true为启用
+ */
+void ZDT_V5_Pos_Control_Direct(uint8_t addr, uint8_t dir, uint16_t vel, uint32_t pos, uint8_t mode, bool snF) {
+	uint8_t cmd[16] = {0};
+	cmd[0] = addr; cmd[1] = CMD_POS_MODE_DIRECT; cmd[2] = dir;
+	cmd[3] = (uint8_t)(vel >> 8); cmd[4] = (uint8_t)(vel >> 0);
+	cmd[5] = (uint8_t)(pos >> 24); cmd[6] = (uint8_t)(pos >> 16); cmd[7] = (uint8_t)(pos >> 8); cmd[8] = (uint8_t)(pos >> 0);
+	cmd[9] = mode; cmd[10] = snF; cmd[11] = END_CODE;
+	zdt_v5_port_send(cmd, 12);
+}
+#endif
+
+#if MOTOR_POS_MODE_DIRECT_LIMIT
+/**
+ * @brief 直通限速位置模式限电流控制（X固件）
+ * @param addr 电机地址
+ * @param dir 方向,0为CW，其余值为CCW
+ * @param vel 速度(RPM) 0-3000.0
+ * @param pos 位置角度(0.1°) 0- (2^32 - 1)
+ * @param mode 运动模式:0-相对上一目标,1-绝对位置,2-相对当前位置
+ * @param snF 等待同步标志,false为不启用,true为启用
+ * @param max_current 最大电流(mA) 0-5000
+ */
+void ZDT_V5_Pos_Control_Direct_With_Limit(uint8_t addr, uint8_t dir, uint16_t vel, uint32_t pos, uint8_t mode, bool snF, uint16_t max_current) {
+	uint8_t cmd[16] = {0};
+	cmd[0] = addr; cmd[1] = CMD_POS_MODE_DIRECT_LIMIT; cmd[2] = dir;
+	cmd[3] = (uint8_t)(vel >> 8); cmd[4] = (uint8_t)(vel >> 0);
+	cmd[5] = (uint8_t)(pos >> 24); cmd[6] = (uint8_t)(pos >> 16); cmd[7] = (uint8_t)(pos >> 8); cmd[8] = (uint8_t)(pos >> 0);
+	cmd[9] = mode; cmd[10] = snF;
+	cmd[11] = (uint8_t)(max_current >> 8); cmd[12] = (uint8_t)(max_current >> 0);
+	cmd[13] = END_CODE;
+	zdt_v5_port_send(cmd, 14);
+}
+#endif
+
 #if MOTOR_TORQUE_MODE
 /**
  * @brief 力矩模式控制
@@ -560,7 +560,7 @@ void ZDT_V5_Pos_Control_Trapezoidal_With_Limit(uint8_t addr, uint8_t dir, uint16
  * @param dir 方向,0为CW，其余值为CCW
  * @param slope 电流斜率(mA/S) 0-65535
  * @param current 目标电流(mA) 0-5000
- * @param snF 多机同步标志,false为不启用,true为启用
+ * @param snF 等待同步标志,false为不启用,true为启用
  */
 void ZDT_V5_Torque_Control(uint8_t addr, uint8_t dir, uint16_t slope, uint16_t current, bool snF) {
 	uint8_t cmd[16] = {0};
@@ -580,7 +580,7 @@ void ZDT_V5_Torque_Control(uint8_t addr, uint8_t dir, uint16_t slope, uint16_t c
  * @param slope 电流斜率(mA/S) 0-65535
  * @param current 目标电流(mA) 0-5000
  * @param max_vel 最大速度(0.1RPM) 0-30000
- * @param snF 多机同步标志,false为不启用,true为启用
+ * @param snF 等待同步标志,false为不启用,true为启用
  */
 void ZDT_V5_Torque_Control_With_Limit(uint8_t addr, uint8_t dir, uint16_t slope, uint16_t current, uint16_t max_vel, bool snF) {
 	uint8_t cmd[16] = {0};
@@ -598,7 +598,7 @@ void ZDT_V5_Torque_Control_With_Limit(uint8_t addr, uint8_t dir, uint16_t slope,
 /**
  * @brief 立即停止
  * @param addr 电机地址
- * @param snF 多机同步标志,false为不启用,true为启用
+ * @param snF 等待同步标志,false为不启用,true为启用
  */
 void ZDT_V5_Stop(uint8_t addr, bool snF) {
 	uint8_t cmd[16] = {0};
@@ -616,27 +616,6 @@ void ZDT_V5_Synchronous_Motion(uint8_t addr) {
 	uint8_t cmd[16] = {0};
 	cmd[0] = addr; cmd[1] = CMD_SYNC_MOTION; cmd[2] = AUX_CODE_SYNC_MOTION; cmd[3] = END_CODE;
 	zdt_v5_port_send(cmd, 4);
-}
-#endif
-
-#if MOTOR_MULTI_CMD
-/**
- * @brief 多电机命令（X42S/Y42）
- * @param addr 电机地址
- * @param len 总字节数
- * @param cmd_data 命令数据
- */
-void ZDT_V5_Multi_Motor_Cmd(uint8_t addr, uint8_t len, uint8_t *cmd_data) {
-	uint8_t cmd[64] = {0};
-	uint8_t i = 0;
-	cmd[i] = addr; ++i;
-	cmd[i] = CMD_MULTI_MOTOR; ++i;
-	cmd[i] = len; ++i;
-	for(uint8_t n = 0; n < len; n++) {
-		cmd[i] = cmd_data[n]; ++i;
-	}
-	cmd[i] = END_CODE; ++i;
-	zdt_v5_port_send(cmd, i);
 }
 #endif
 
@@ -772,7 +751,7 @@ void ZDT_V5_Origin_Set_Zero(uint8_t addr, bool svF) {
  * @brief 触发回零
  * @param addr 电机地址
  * @param o_mode 回零模式,0为单圈就近回零,1为单圈方向回零,2为多圈无限位碰撞回零,3为多圈有限位开关回零
- * @param snF 多机同步标志,false为不启用,true为启用
+ * @param snF 等待同步标志,false为不启用,true为启用
  */
 void ZDT_V5_Origin_Trigger_Return(uint8_t addr, uint8_t o_mode, bool snF) {
 	uint8_t cmd[16] = {0};
@@ -1042,3 +1021,285 @@ void ZDT_V5_Modify_DMX512_Params(uint8_t addr, bool svF, uint16_t tch, uint8_t n
 	zdt_v5_port_send(cmd, 18);
 }
 #endif
+
+/******************** 多机指令构造 *********************/
+
+#if MOTOR_MULTI_CMD
+/**
+ * @brief 初始化多机指令缓冲区
+ * @param cmd 多机指令结构体指针
+ * @return true 成功, false 失败
+ */
+bool ZDT_V5_Multi_Reset(ZDT_V5_Multi_Cmd_t *cmd) {
+	if (cmd == NULL || cmd->data == NULL) return false;
+
+	cmd->data[0] = 0x00; cmd->data[1] = 0xAA; cmd->data[2] = 0x00;
+	cmd->data[3] = 0x00; cmd->used_len = 4;
+	return true;
+}
+
+/**
+ * @brief 发送多机指令
+ * @param cmd 多机指令结构体指针
+ * @return true 成功, false 失败
+ */
+bool ZDT_V5_Multi_Send(ZDT_V5_Multi_Cmd_t *cmd) {
+	if (cmd == NULL || cmd->data == NULL) return false;
+	if (cmd->buf_size < cmd->used_len + 1) return false;
+
+	cmd->data[cmd->used_len] = 0x6B; cmd->used_len++;
+	cmd->data[2] = (uint8_t)(cmd->used_len >> 8);
+	cmd->data[3] = (uint8_t)(cmd->used_len >> 0);
+	zdt_v5_port_send(cmd->data, cmd->used_len);
+	return true;
+}
+
+#if MOTOR_VELOCITY_MODE
+/**
+ * @brief 多机速度控制
+ * @param cmd 多机指令结构体指针
+ * @param addr 电机地址
+ * @param dir 方向,0为CW，其余值为CCW
+ * @param vel 速度(RPM) 0-5000
+ * @param acc 加速度(RPM/S或档位)
+ * @param snF 等待同步标志,false为不启用,true为启用
+ * @return true 成功, false 失败
+ */
+bool ZDT_V5_Multi_Vel_Ctrl(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, bool snF) {
+	if (cmd == NULL || cmd->data == NULL) return false;
+#if CURRENT_FIRMWARE == FIRMWARE_X
+	uint8_t cmd_len = 9;
+	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
+	uint8_t *p = cmd->data + cmd->used_len;
+	p[0] = addr; p[1] = CMD_VELOCITY_MODE;
+	p[2] = dir;
+	p[3] = (uint8_t)(acc >> 8); p[4] = (uint8_t)(acc >> 0);
+	p[5] = (uint8_t)(vel >> 8); p[6] = (uint8_t)(vel >> 0);
+	p[7] = snF; p[8] = END_CODE;
+	cmd->used_len += cmd_len;
+#else
+	uint8_t cmd_len = 8;
+	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
+	uint8_t *p = cmd->data + cmd->used_len;
+	p[0] = addr; p[1] = CMD_VELOCITY_MODE;
+	p[2] = dir; p[3] = (uint8_t)(vel >> 8); p[4] = (uint8_t)(vel >> 0);
+	p[5] = (uint8_t)acc; p[6] = snF; p[7] = END_CODE;
+	cmd->used_len += cmd_len;
+#endif
+	return true;
+}
+#endif
+
+#if MOTOR_VELOCITY_MODE_LIMIT
+/**
+ * @brief 多机速度控制限电流（X固件增强版）
+ * @param cmd 多机指令结构体指针
+ * @param addr 电机地址
+ * @param dir 方向,0为CW，其余值为CCW
+ * @param vel 速度(RPM) 0-3000.0
+ * @param acc 加速度(RPM/S) 0-65535
+ * @param snF 等待同步标志,false为不启用,true为启用
+ * @param max_current 最大电流(mA) 0-5000
+ * @return true 成功, false 失败
+ */
+bool ZDT_V5_Multi_Vel_Ctrl_Limit(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, bool snF, uint16_t max_current) {
+	if (cmd == NULL || cmd->data == NULL) return false;
+	uint8_t cmd_len = 11;
+	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
+	uint8_t *p = cmd->data + cmd->used_len;
+	p[0] = addr; p[1] = CMD_VELOCITY_MODE_LIMIT; p[2] = dir;
+	p[3] = (uint8_t)(acc >> 8); p[4] = (uint8_t)(acc >> 0);
+	p[5] = (uint8_t)(vel >> 8); p[6] = (uint8_t)(vel >> 0);
+	p[7] = snF;
+	p[8] = (uint8_t)(max_current >> 8); p[9] = (uint8_t)(max_current >> 0);
+	p[10] = END_CODE;
+	cmd->used_len += cmd_len;
+	return true;
+}
+#endif
+
+#if MOTOR_POS_MODE
+/**
+ * @brief 多机梯形曲线位置控制
+ * @param cmd 多机指令结构体指针
+ * @param addr 电机地址
+ * @param dir 方向,0为CW，其余值为CCW
+ * @param vel 速度(RPM) 0-5000
+ * @param acc 加速度(RPM/S或档位)
+ * @param dec 减速度(仅X固件)
+ * @param clk 脉冲数/角度 0- (2^32 - 1)
+ * @param raF 相位/绝对标志,false为相对运动,true为绝对值运动
+ * @param rsp 是否返回到位标志,false为不返回,true为返回
+ * @return true 成功, false 失败
+ */
+bool ZDT_V5_Multi_Pos_Ctrl(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, uint16_t dec, uint32_t clk, bool raF, bool rsp) {
+	if (cmd == NULL || cmd->data == NULL) return false;
+#if CURRENT_FIRMWARE == FIRMWARE_X
+	uint8_t cmd_len = 16;
+	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
+	uint8_t *p = cmd->data + cmd->used_len;
+	p[0] = addr; p[1] = CMD_POS_MODE_TRAPEZOIDAL;
+	p[2] = dir;
+	p[3] = (uint8_t)(acc >> 8); p[4] = (uint8_t)(acc >> 0);
+	p[5] = (uint8_t)(dec >> 8); p[6] = (uint8_t)(dec >> 0);
+	p[7] = (uint8_t)(vel >> 8); p[8] = (uint8_t)(vel >> 0);
+	p[9] = (uint8_t)(clk >> 24); p[10] = (uint8_t)(clk >> 16); p[11] = (uint8_t)(clk >> 8); p[12] = (uint8_t)(clk >> 0);
+	p[13] = (uint8_t)raF; p[14] = rsp; p[15] = END_CODE;
+	cmd->used_len += cmd_len;
+#else
+	(void)dec;
+	uint8_t cmd_len = 13;
+	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
+	uint8_t *p = cmd->data + cmd->used_len;
+	p[0] = addr; p[1] = CMD_POS_MODE_EMM;
+	p[2] = dir; p[3] = (uint8_t)(vel >> 8); p[4] = (uint8_t)(vel >> 0);
+	p[5] = (uint8_t)acc;
+	p[6] = (uint8_t)(clk >> 24); p[7] = (uint8_t)(clk >> 16); p[8] = (uint8_t)(clk >> 8); p[9] = (uint8_t)(clk >> 0);
+	p[10] = raF; p[11] = rsp; p[12] = END_CODE;
+	cmd->used_len += cmd_len;
+#endif
+	return true;
+}
+#endif
+
+#if MOTOR_POS_MODE_LIMIT
+/**
+ * @brief 多机梯形曲线位置模式限电流控制（X固件增强版）
+ * @param cmd 多机指令结构体指针
+ * @param addr 电机地址
+ * @param dir 方向,0为CW，其余值为CCW
+ * @param vel 速度(RPM) 0-3000.0
+ * @param acc 加速度(RPM/S) 0-65535
+ * @param dec 减速度(RPM/S) 0-65535
+ * @param pos 位置角度(0.1°) 0- (2^32 - 1)
+ * @param mode 运动模式:0-相对上一目标,1-绝对位置,2-相对当前位置
+ * @param rsp 是否返回到位标志,false为不返回,true为返回
+ * @param max_current 最大电流(mA) 0-5000
+ * @return true 成功, false 失败
+ */
+bool ZDT_V5_Multi_Pos_Ctrl_Limit(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, uint16_t dec, uint32_t pos, uint8_t mode, bool rsp, uint16_t max_current) {
+	if (cmd == NULL || cmd->data == NULL) return false;
+	uint8_t cmd_len = 18;
+	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
+	uint8_t *p = cmd->data + cmd->used_len;
+	p[0] = addr; p[1] = CMD_POS_MODE_TRAPEZOIDAL_LIMIT; p[2] = dir;
+	p[3] = (uint8_t)(acc >> 8); p[4] = (uint8_t)(acc >> 0);
+	p[5] = (uint8_t)(dec >> 8); p[6] = (uint8_t)(dec >> 0);
+	p[7] = (uint8_t)(vel >> 8); p[8] = (uint8_t)(vel >> 0);
+	p[9] = (uint8_t)(pos >> 24); p[10] = (uint8_t)(pos >> 16); p[11] = (uint8_t)(pos >> 8); p[12] = (uint8_t)(pos >> 0);
+	p[13] = mode; p[14] = rsp;
+	p[15] = (uint8_t)(max_current >> 8); p[16] = (uint8_t)(max_current >> 0);
+	p[17] = END_CODE;
+	cmd->used_len += cmd_len;
+	return true;
+}
+#endif
+
+#if MOTOR_POS_MODE_DIRECT
+/**
+ * @brief 多机直通限速位置模式控制（X固件）
+ * @param cmd 多机指令结构体指针
+ * @param addr 电机地址
+ * @param dir 方向,0为CW，其余值为CCW
+ * @param vel 速度(RPM) 0-3000.0
+ * @param pos 位置角度(0.1°) 0- (2^32 - 1)
+ * @param mode 运动模式:0-相对上一目标,1-绝对位置,2-相对当前位置
+ * @param rsp 是否返回到位标志,false为不返回,true为返回
+ * @return true 成功, false 失败
+ */
+bool ZDT_V5_Multi_Pos_Ctrl_Direct(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint32_t pos, uint8_t mode, bool rsp) {
+	if (cmd == NULL || cmd->data == NULL) return false;
+	uint8_t cmd_len = 12;
+	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
+	uint8_t *p = cmd->data + cmd->used_len;
+	p[0] = addr; p[1] = CMD_POS_MODE_DIRECT; p[2] = dir;
+	p[3] = (uint8_t)(vel >> 8); p[4] = (uint8_t)(vel >> 0);
+	p[5] = (uint8_t)(pos >> 24); p[6] = (uint8_t)(pos >> 16); p[7] = (uint8_t)(pos >> 8); p[8] = (uint8_t)(pos >> 0);
+	p[9] = mode; p[10] = rsp; p[11] = END_CODE;
+	cmd->used_len += cmd_len;
+	return true;
+}
+#endif
+
+#if MOTOR_POS_MODE_DIRECT_LIMIT
+/**
+ * @brief 多机直通限速位置模式限电流控制（X固件）
+ * @param cmd 多机指令结构体指针
+ * @param addr 电机地址
+ * @param dir 方向,0为CW，其余值为CCW
+ * @param vel 速度(RPM) 0-3000.0
+ * @param pos 位置角度(0.1°) 0- (2^32 - 1)
+ * @param mode 运动模式:0-相对上一目标,1-绝对位置,2-相对当前位置
+ * @param rsp 是否返回到位标志,false为不返回,true为返回
+ * @param max_current 最大电流(mA) 0-5000
+ * @return true 成功, false 失败
+ */
+bool ZDT_V5_Multi_Pos_Ctrl_Direct_Limit(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint32_t pos, uint8_t mode, bool rsp, uint16_t max_current) {
+	if (cmd == NULL || cmd->data == NULL) return false;
+	uint8_t cmd_len = 14;
+	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
+	uint8_t *p = cmd->data + cmd->used_len;
+	p[0] = addr; p[1] = CMD_POS_MODE_DIRECT_LIMIT; p[2] = dir;
+	p[3] = (uint8_t)(vel >> 8); p[4] = (uint8_t)(vel >> 0);
+	p[5] = (uint8_t)(pos >> 24); p[6] = (uint8_t)(pos >> 16); p[7] = (uint8_t)(pos >> 8); p[8] = (uint8_t)(pos >> 0);
+	p[9] = mode; p[10] = rsp;
+	p[11] = (uint8_t)(max_current >> 8); p[12] = (uint8_t)(max_current >> 0);
+	p[13] = END_CODE;
+	cmd->used_len += cmd_len;
+	return true;
+}
+#endif
+
+#if MOTOR_TORQUE_MODE
+/**
+ * @brief 多机力矩模式控制
+ * @param cmd 多机指令结构体指针
+ * @param addr 电机地址
+ * @param dir 方向,0为CW，其余值为CCW
+ * @param slope 电流斜率(mA/S) 0-65535
+ * @param current 目标电流(mA) 0-5000
+ * @param snF 等待同步标志,false为不启用,true为启用
+ * @return true 成功, false 失败
+ */
+bool ZDT_V5_Multi_Torque_Ctrl(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t slope, uint16_t current, bool snF) {
+	if (cmd == NULL || cmd->data == NULL) return false;
+	uint8_t cmd_len = 9;
+	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
+	uint8_t *p = cmd->data + cmd->used_len;
+	p[0] = addr; p[1] = CMD_TORQUE_MODE; p[2] = dir;
+	p[3] = (uint8_t)(slope >> 8); p[4] = (uint8_t)(slope >> 0);
+	p[5] = (uint8_t)(current >> 8); p[6] = (uint8_t)(current >> 0);
+	p[7] = snF; p[8] = END_CODE;
+	cmd->used_len += cmd_len;
+	return true;
+}
+#endif
+
+#if MOTOR_TORQUE_MODE_LIMIT
+/**
+ * @brief 多机力矩模式限速控制（增强版）
+ * @param cmd 多机指令结构体指针
+ * @param addr 电机地址
+ * @param dir 方向,0为CW，其余值为CCW
+ * @param slope 电流斜率(mA/S) 0-65535
+ * @param current 目标电流(mA) 0-5000
+ * @param max_vel 最大速度(0.1RPM) 0-30000
+ * @param snF 等待同步标志,false为不启用,true为启用
+ * @return true 成功, false 失败
+ */
+bool ZDT_V5_Multi_Torque_Ctrl_Limit(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t slope, uint16_t current, uint16_t max_vel, bool snF) {
+	if (cmd == NULL || cmd->data == NULL) return false;
+	uint8_t cmd_len = 11;
+	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
+	uint8_t *p = cmd->data + cmd->used_len;
+	p[0] = addr; p[1] = CMD_TORQUE_MODE_LIMIT; p[2] = dir;
+	p[3] = (uint8_t)(slope >> 8); p[4] = (uint8_t)(slope >> 0);
+	p[5] = (uint8_t)(current >> 8); p[6] = (uint8_t)(current >> 0);
+	p[7] = snF;
+	p[8] = (uint8_t)(max_vel >> 8); p[9] = (uint8_t)(max_vel >> 0);
+	p[10] = END_CODE;
+	cmd->used_len += cmd_len;
+	return true;
+}
+#endif
+#endif /* MOTOR_MULTI_CMD */

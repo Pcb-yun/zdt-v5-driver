@@ -28,6 +28,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 #include "zdt_v5_cmd.h"
+#include "zdt_v5_drv.h"
 
 #if !ZDT_ONLY_DRIVER
 
@@ -301,6 +302,9 @@ typedef struct {
 bool ZDT_V5_Register_Motor(uint8_t id, MotorStatus_t *status);
 void ZDT_V5_Receive(uint8_t *data, uint8_t len);
 void ZDT_V5_Process_Cmd(MotorCmd_t *cmd);
+#if MOTOR_MULTI_CMD
+void ZDT_V5_Process_Multi_Cmd(uint8_t addr, MotorMulti_t *multi, ZDT_V5_Multi_Cmd_t *cmd);
+#endif
 
 #ifdef __cplusplus
 }

@@ -103,13 +103,13 @@
 #define MOTOR_CMD_ENABLE                   1
 #define MOTOR_CMD_STOP                     1
 #define MOTOR_POS_MODE_FAST                1
-#define MOTOR_POS_MODE_TRAPEZOIDAL         1
+#define MOTOR_POS_MODE                     1
 #define MOTOR_VELOCITY_MODE                1
 #define MOTOR_POS_MODE_DIRECT              1
 #define MOTOR_TORQUE_MODE                  1
 #define MOTOR_POS_MODE_DIRECT_LIMIT        1
 #define MOTOR_TORQUE_MODE_LIMIT            1
-#define MOTOR_POS_MODE_TRAPEZOIDAL_LIMIT   1
+#define MOTOR_POS_MODE_LIMIT               1
 #define MOTOR_VELOCITY_MODE_LIMIT          1
 #define MOTOR_SYNC_TRIGGER                 1
 #define MOTOR_MULTI_CMD                    1

@@ -22,7 +22,7 @@
 | ------- | ------------------------------------ |
 | 固件支持    | Emm 固件 + X 固件，同一 API 兼容两种协议          |
 | 型号支持    | X42、X42S、Y42 全系列                     |
-| 功能覆盖    | 使能/速度/位置/力矩/停止/同步/回零/参数读写/编码器校准等全部功能 |
+| 功能覆盖    | 使能/速度/位置/力矩/停止/同步/回零/参数读写/编码器校准/多机命令等全部功能 |
 | 条件编译    | 约 100 个配置开关，精确控制每个功能的编译              |
 | 资源占用    | 配置开关关闭的功能完全不占用代码空间                   |
 | 多电机     | 通过 `ZDT_STEP_NUM` 配置，注册制支持任意 ID（无需连续）  |
@@ -99,8 +99,9 @@
 // 按需开启功能（0=关闭，1=开启）
 #define MOTOR_CMD_ENABLE         1   // 使能控制
 #define MOTOR_VELOCITY_MODE      1   // 速度模式
-#define MOTOR_POS_MODE_TRAPEZOIDAL 1 // 位置模式
+#define MOTOR_POS_MODE           1   // 位置模式
 #define MOTOR_TRIGGER_RESET_POS  1   // 位置清零
+#define MOTOR_MULTI_CMD          1   // 多电机命令（仅 X42S/Y42 型号支持）
 ```
 
 #### 1.1 仅驱动层模式（ONLY\_DRIVER）
@@ -187,8 +188,24 @@ void on_uart_rx(uint8_t *data, uint8_t len) {
 | 编码器校准 | `ZDT_V5_Trig_Encoder_Cal`      | 触发编码器校准        |
 | 回零    | `ZDT_V5_Origin_Trigger_Return` | 触发回零           |
 | 参数设置  | `ZDT_V5_Modify_*`              | PID、电流、细分等参数设置 |
+| 多机命令  | `ZDT_V5_Multi_*`               | 多机指令构造与发送（速度/位置/力矩控制） |
 
 所有函数均通过条件编译控制，仅在配置中启用的功能才会被编译。
+
+#### 多机命令构造器函数
+
+| 函数 | 说明 |
+| ---- | ---- |
+| `ZDT_V5_Multi_Reset` | 初始化多机指令缓冲区 |
+| `ZDT_V5_Multi_Send` | 发送多机指令 |
+| `ZDT_V5_Multi_Vel_Ctrl` | 添加速度模式控制指令 |
+| `ZDT_V5_Multi_Vel_Ctrl_Limit` | 添加速度模式限电流控制指令 |
+| `ZDT_V5_Multi_Pos_Ctrl` | 添加位置模式控制指令 |
+| `ZDT_V5_Multi_Pos_Ctrl_Limit` | 添加位置模式限电流控制指令 |
+| `ZDT_V5_Multi_Pos_Ctrl_Direct` | 添加直通限速位置模式指令 |
+| `ZDT_V5_Multi_Pos_Ctrl_Direct_Limit` | 添加直通限速位置模式限电流指令 |
+| `ZDT_V5_Multi_Torque_Ctrl` | 添加力矩模式控制指令 |
+| `ZDT_V5_Multi_Torque_Ctrl_Limit` | 添加力矩模式限速控制指令 |
 
 ### 引擎层 (`zdt_v5_engine.h`)
 
@@ -197,6 +214,7 @@ void on_uart_rx(uint8_t *data, uint8_t len) {
 | `ZDT_V5_Register_Motor` | 注册电机到引擎层（ID 可任意，无需从 1 开始连续） |
 | `ZDT_V5_Receive`     | 处理串口接收数据，更新已注册电机的状态 |
 | `ZDT_V5_Process_Cmd` | 执行电机命令（同步调用，内部调用发送函数）               |
+| `ZDT_V5_Process_Multi_Cmd` | 处理多机指令构造器命令，将单电机指令添加到多机缓冲区 |
 
 ### 命令结构体 (`zdt_v5_cmd.h`)
 
@@ -204,14 +222,84 @@ void on_uart_rx(uint8_t *data, uint8_t len) {
 
 ```c
 MotorCmd_t cmd;
+MotorCtrl_t ctrl;
 cmd.op_type = OP_CONTROL;         // 操作类型
 cmd.motor_id = 1;                 // 目标电机 ID
-cmd.type.ctrl.type = CTRL_VELOCITY; // 控制类型
-cmd.type.ctrl.p.vel.dir = 0;      // 方向
-cmd.type.ctrl.p.vel.vel = 500;    // 速度
-cmd.type.ctrl.p.vel.acc = 200;    // 加速度
-cmd.type.ctrl.p.vel.sync = false; // 同步标志
+ctrl.type = CTRL_VEL;             // 控制类型
+ctrl.p.vel.dir = 0;               // 方向
+ctrl.p.vel.vel = 500;             // 速度
+ctrl.p.vel.acc = 200;             // 加速度
+ctrl.p.vel.sync = false;          // 同步标志
+cmd.type.ctrl = ctrl;             // 赋值控制命令
 ```
+
+`type` 联合体包含以下成员：
+
+| 成员 | 类型 | 说明 |
+| ---- | ---- | ---- |
+| `ctrl` | `MotorCtrl_t` | 运动控制命令 |
+| `trigger` | `MotorTrigger_t` | 触发动作命令 |
+| `write` | `MotorParamWrite_t` | 电机参数设置 |
+| `read` | `MotorParamRead_t` | 参数读取 |
+
+### 多机命令 (`zdt_v5_cmd.h`)
+
+多机命令允许一次发送多个电机的控制指令，实现高效的多电机同步控制。使用时需要创建两个结构体：
+
+#### 结构体说明
+
+| 结构体 | 用途 | 关键字段 |
+| ------ | ---- | -------- |
+| `ZDT_V5_Multi_Cmd_t` | 多机指令缓冲区，用于累积多个电机的命令 | `data`(缓冲区指针), `used_len`(已用长度), `buf_size`(缓冲区大小) |
+| `MotorMulti_t` | 多机指令构造器控制结构体，描述单台电机的控制参数 | `type`(指令类型), `p`(参数联合体) |
+
+#### 使用方法
+
+```c
+uint8_t multi_buf[256];             // 多机指令缓冲区
+ZDT_V5_Multi_Cmd_t cmd = {
+    .data = multi_buf,              // 指向缓冲区
+    .used_len = 0,                  // 初始已用长度
+    .buf_size = sizeof(multi_buf)   // 缓冲区大小
+};
+
+ZDT_V5_Multi_Reset(&cmd);           // 初始化多机指令缓冲区
+
+MotorMulti_t multi;
+
+// 为电机 1 添加速度控制指令
+multi.type = MULTI_VEL;
+multi.p.vel.dir = 0;
+multi.p.vel.vel = 500;
+multi.p.vel.acc = 200;
+multi.p.vel.snF = false;
+ZDT_V5_Process_Multi_Cmd(1, &multi, &cmd);
+
+// 为电机 2 添加位置控制指令
+multi.type = MULTI_POS;
+multi.p.pos.dir = 1;
+multi.p.pos.vel = 300;
+multi.p.pos.acc = 150;
+multi.p.pos.target = 1000;
+multi.p.pos.mode = 0;
+multi.p.pos.rsp = false;
+ZDT_V5_Process_Multi_Cmd(2, &multi, &cmd);
+
+ZDT_V5_Multi_Send(&cmd);            // 发送多机指令
+```
+
+#### 支持的多机指令类型
+
+| 类型 | 说明 |
+| ---- | ---- |
+| `MULTI_VEL` | 速度模式控制 |
+| `MULTI_VEL_LIMIT` | 速度模式限电流控制 |
+| `MULTI_POS` | 位置模式控制 |
+| `MULTI_POS_LIMIT` | 位置模式限电流控制 |
+| `MULTI_POS_DIRECT` | 直通限速位置模式 |
+| `MULTI_POS_DIRECT_LIMIT` | 直通限速位置模式（限电流） |
+| `MULTI_TORQUE` | 力矩模式控制 |
+| `MULTI_TORQUE_LIMIT` | 力矩模式限速控制 |
 
 ### 移植接口 (`zdt_v5_port.h` / `zdt_v5_port.c`)
 

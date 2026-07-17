@@ -170,28 +170,135 @@ typedef enum {
 	MP_INFO								// 设备信息与特殊功能
 } MotorParam_t;
 
+#if MOTOR_MULTI_CMD
+/**
+ * @brief 多机指令构造器控制类型枚举
+ */
+typedef enum {
+	MULTI_NONE = 0,						// 无命令
+	MULTI_RESET,						// 重置构造缓存
+#if MOTOR_VELOCITY_MODE
+	MULTI_VEL,							// 速度模式控制
+#endif
+#if MOTOR_VELOCITY_MODE_LIMIT
+	MULTI_VEL_LIMIT, 					// 速度模式限电流控制
+#endif
+#if MOTOR_POS_MODE
+	MULTI_POS,							// 梯形曲线位置模式控制
+#endif
+#if MOTOR_POS_MODE_LIMIT
+	MULTI_POS_LIMIT, 					// 梯形曲线位置模式限电流控制
+#endif
+#if MOTOR_POS_MODE_DIRECT
+	MULTI_POS_DIRECT,     				// 直通限速位置模式
+#endif
+#if MOTOR_POS_MODE_DIRECT_LIMIT
+	MULTI_POS_DIRECT_LIMIT, 			// 直通限速位置模式限电流控制
+#endif
+#if MOTOR_TORQUE_MODE
+	MULTI_TORQUE,         				// 力矩模式
+#endif
+#if MOTOR_TORQUE_MODE_LIMIT
+	MULTI_TORQUE_LIMIT,   				// 力矩模式限速控制
+#endif
+} MotorMultiType_t;
+
+/**
+ * @brief 多机指令结构体
+ */
+typedef struct {
+	uint8_t *data;			// 指令缓冲区指针
+	uint16_t used_len;		// 已用指令长度
+	uint16_t buf_size;		// 缓冲区大小
+} ZDT_V5_Multi_Cmd_t;
+
+/**
+ * @brief 多机指令构造器控制结构体
+ */
+ typedef struct {
+	MotorMultiType_t type;  			// 多机指令构造器控制类型
+
+	union {
+#if MOTOR_VELOCITY_MODE
+		struct {
+			uint8_t dir;            	// 方向: 0=CW(正转), 其他=CCW(反转)
+			uint16_t vel;           	// 速度, 单位:RPM, X固件范围:0-3000.0(值*10), Emm范围:0-3000
+			uint16_t acc;           	// 加速度, X固件单位:RPM/S(0-65535), Emm固件:档位(0-255)
+#if MOTOR_VELOCITY_MODE_LIMIT
+			uint16_t max_current;   	// 最大电流限制, 单位:mA, 范围:0-5000
+#endif
+			bool snF;              		// 同步标志: true=先缓存等待同步触发, false=立即执行
+		} vel;
+#endif
+
+#if MOTOR_POS_MODE
+		struct {
+			uint8_t dir;            	// 方向: 0=CW(正转), 其他=CCW(反转)
+			uint16_t vel;           	// 速度, X固件单位:0.1RPM(0-3000.0), Emm单位:RPM(0-3000)
+			uint16_t acc;           	// 加速度, X固件单位:RPM/S(0-65535), Emm固件:档位(0-255)
+			int32_t target;         	// 目标位置, Emm:脉冲数, X:角度(单位0.1°, 范围0-429496729.5)
+			uint8_t mode;           	// 运动模式: 0=相对上一目标, 1=绝对位置, 2=相对当前位置
+
+#if CURRENT_FIRMWARE == FIRMWARE_X
+			uint16_t dec;           	// 减速度, 单位:RPM/S, 范围:0-65535
+#endif
+
+#if MOTOR_POS_MODE_LIMIT
+			uint16_t max_current;   	// 最大电流限制, 单位:mA, 范围:0-5000
+#endif
+			bool rsp;              		// 是否返回到位信息, true=返回, false=不返回到位
+		} pos;
+#endif
+
+#if MOTOR_POS_MODE_DIRECT
+		struct {
+			uint8_t dir;            	// 方向: 0=CW(正转), 其他=CCW(反转)
+			uint16_t vel;           	// 速度, 单位:0.1RPM, 范围:0-3000.0
+			int32_t target;         	// 目标位置角度, 单位:0.1°, 范围:0-429496729.5
+			uint8_t mode;           	// 运动模式: 0=相对上一目标, 1=绝对位置, 2=相对当前位置
+			uint16_t max_current;   	// 最大电流限制, 单位:mA, 范围:0-5000
+			bool rsp;              		// 是否返回到位信息, true=返回, false=不返回到位
+		} pos_dir;
+#endif
+
+#if MOTOR_TORQUE_MODE
+		struct {
+			uint8_t dir;            	// 方向: 0=CW(正转), 其他=CCW(反转)
+			uint16_t slope;         	// 电流斜率(加速度), 单位:mA/S, 范围:0-65535
+			uint16_t current;       	// 目标电流, 单位:mA, 范围:0-5000
+			uint16_t max_vel;       	// 最大速度限制, 单位:0.1RPM, 范围:0-3000.0
+			bool sync;              	// 同步标志: true=先缓存等待同步触发, false=立即执行
+		} torque;
+#endif
+
+		struct {
+			bool dummy;  				// 空成员保证编译
+		} dummy;
+	} p;
+} MotorMulti_t;
+#endif
+
 /**
  * @brief 运动控制命令类型枚举
  */
 typedef enum {
 	CTRL_NONE = 0,       				// 无命令
 	CTRL_ENABLE,         				// 使能控制
-	CTRL_VELOCITY,       				// 速度模式控制
+	CTRL_VEL,       					// 速度模式控制
 #if MOTOR_VELOCITY_MODE_LIMIT
-	CTRL_VELOCITY_LIMIT, 				// 速度模式限电流控制
+	CTRL_VEL_LIMIT, 					// 速度模式限电流控制
 #endif
-	CTRL_POSITION,       				// 位置模式控制
+#if MOTOR_POS_MODE
+	CTRL_POS,       					// 位置模式控制
+#endif
+#if MOTOR_POS_MODE_LIMIT
+	CTRL_POS_LIMIT, 					// 梯形曲线位置模式限电流控制
+#endif
 #if MOTOR_POS_MODE_DIRECT
 	CTRL_POS_DIRECT,     				// 直通限速位置模式
 #endif
 #if MOTOR_POS_MODE_DIRECT_LIMIT
 	CTRL_POS_DIRECT_LIMIT, 				// 直通限速位置模式限电流控制
-#endif
-#if MOTOR_POS_MODE_TRAPEZOIDAL
-	CTRL_POS_TRAPEZOIDAL, 				// 梯形曲线位置模式
-#endif
-#if MOTOR_POS_MODE_TRAPEZOIDAL_LIMIT
-	CTRL_POS_TRAPEZOIDAL_LIMIT, 		// 梯形曲线位置模式限电流控制
 #endif
 #if MOTOR_TORQUE_MODE
 	CTRL_TORQUE,         				// 力矩模式
@@ -204,7 +311,7 @@ typedef enum {
 	CTRL_SYNC,           				// 触发多机同步运动
 #endif
 #if MOTOR_MULTI_CMD
-	CTRL_MULTI,          				// 多电机命令（通过一条命令控制多个电机）
+	CTRL_MULTI,           				// 发送多机指令
 #endif
 #if MOTOR_POS_MODE_FAST
 	CTRL_FAST_SET,       				// 快速位置模式-设定参数（第一步）
@@ -238,7 +345,7 @@ typedef struct {
 		} vel;
 #endif
 
-#if MOTOR_POS_MODE_TRAPEZOIDAL
+#if MOTOR_POS_MODE
 		struct {
 			uint8_t dir;            	// 方向: 0=CW(正转), 其他=CCW(反转)
 			uint16_t vel;           	// 速度, X固件单位:0.1RPM(0-3000.0), Emm单位:RPM(0-3000)
@@ -250,7 +357,7 @@ typedef struct {
 			uint16_t dec;           	// 减速度, 单位:RPM/S, 范围:0-65535
 #endif
 
-#if MOTOR_POS_MODE_TRAPEZOIDAL_LIMIT
+#if MOTOR_POS_MODE_LIMIT
 			uint16_t max_current;   	// 最大电流限制, 单位:mA, 范围:0-5000
 #endif
 
@@ -307,12 +414,11 @@ typedef struct {
 
 #if MOTOR_MULTI_CMD
 		struct {
-			uint8_t len;            	// 命令数据总字节数
-			uint8_t *data;          	// 命令数据指针（包含多个电机的命令）
+			ZDT_V5_Multi_Cmd_t cmd;  	// 多机指令命令
 		} multi;
 #endif
 
-		struct {
+struct {
 			bool dummy;  				// 空成员保证编译
 		} dummy;
 	} p;

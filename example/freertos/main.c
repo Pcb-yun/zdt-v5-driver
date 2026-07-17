@@ -22,15 +22,14 @@ static MotorStatus_t motors[ZDT_STEP_NUM];
 
 /* ======================== RTOS 资源 ======================== */
 
-static osMessageQueueId_t cmd_queue;		// 电机命令队列
+static osMessageQueueId_t cmd_queue;
 
-/* 串口接收数据结构 */
 typedef struct {
 	uint8_t data[64];
 	uint8_t len;
 } RxBuf_t;
 
-static osMessageQueueId_t rx_queue;			// 串口接收数据队列
+static osMessageQueueId_t rx_queue;
 
 /* ======================== 命令发送接口 ======================== */
 
@@ -50,7 +49,7 @@ void Ctrl_Task(void *argument) {
 	for (;;) {
 		if (osMessageQueueGet(cmd_queue, &cmd, NULL, osWaitForever) == osOK) {
 			ZDT_V5_Process_Cmd(&cmd);
-			osDelay(2);		// 防止粘包
+			osDelay(2);
 		}
 	}
 }
@@ -75,20 +74,25 @@ void Recv_Task(void *argument) {
 void Update_Task(void *argument) {
 	(void)argument;
 	MotorCmd_t cmd;
-	uint32_t interval = 50;	// 50ms 轮询一次
+	MotorParamRead_t read;
+	uint32_t interval = 50;
 
-	osDelay(100);	// 等待系统就绪
+	osDelay(100);
 
 	for (;;) {
 		for (uint8_t i = 0; i < ZDT_STEP_NUM; i++) {
-			if (motors[i].motor_id == 0) continue;	// 跳过未注册的槽位
+			if (motors[i].motor_id == 0) continue;
+
+			read.type = MP_SYS;
+			read.p.sys = S_CPOS;
+
 			cmd.motor_id = motors[i].motor_id;
 			cmd.op_type = OP_PARAM_READ;
-			cmd.type.read.type = MP_SYS;
-			cmd.type.read.p.sys = S_CPOS;	// 读取实时位置
+			cmd.type.read = read;
 			Motor_Send_Cmd(&cmd);
 
-			cmd.type.read.p.sys = S_VEL;	// 读取实时转速
+			read.p.sys = S_VEL;
+			cmd.type.read = read;
 			Motor_Send_Cmd(&cmd);
 		}
 		osDelay(interval);
@@ -101,88 +105,125 @@ void Update_Task(void *argument) {
  * @brief 初始化电机系统
  */
 static void Motor_Init(void) {
-	/* 初始化队列 */
 	cmd_queue = osMessageQueueNew(16, sizeof(MotorCmd_t), NULL);
 	rx_queue = osMessageQueueNew(8, sizeof(RxBuf_t), NULL);
 
-	/* 注册电机到引擎层（ID 可任意，无需连续） */
 	ZDT_V5_Register_Motor(1, &motors[0]);
+	ZDT_V5_Register_Motor(2, &motors[1]);
 
-	/* 初始化串口（HAL 库函数）*/
 	MX_USART6_UART_Init();
 
-	/* 启动 DMA 接收 */
 	extern uint8_t rx6Buffer[128];
 	HAL_UARTEx_ReceiveToIdle_DMA(&huart6, rx6Buffer, 128);
 }
 
 /* ======================== 应用层使用示例（引擎层方式）======================== */
 
-/**
- * @brief 应用任务 — 演示电机控制流程
- *
- * 用户可根据需求在此基础上封装更高级的 API。
- */
 static void app_demo_enable(uint8_t id, bool enable) {
-	MotorCmd_t cmd = {0};
+	MotorCmd_t cmd;
+	MotorCtrl_t ctrl;
 	cmd.op_type = OP_CONTROL;
 	cmd.motor_id = id;
-	cmd.type.ctrl.type = CTRL_ENABLE;
-	cmd.type.ctrl.p.en.enable = enable;
+	ctrl.type = CTRL_ENABLE;
+	ctrl.p.en.enable = enable;
+	ctrl.p.en.sync = false;
+	cmd.type.ctrl = ctrl;
 	Motor_Send_Cmd(&cmd);
 }
 
 static void app_demo_velocity(uint8_t id, uint8_t dir, uint16_t vel, uint16_t acc) {
-	MotorCmd_t cmd = {0};
+	MotorCmd_t cmd;
+	MotorCtrl_t ctrl;
 	cmd.op_type = OP_CONTROL;
 	cmd.motor_id = id;
-	cmd.type.ctrl.type = CTRL_VELOCITY;
-	cmd.type.ctrl.p.vel.dir = dir;
-	cmd.type.ctrl.p.vel.vel = vel;
-	cmd.type.ctrl.p.vel.acc = acc;
+	ctrl.type = CTRL_VEL;
+	ctrl.p.vel.dir = dir;
+	ctrl.p.vel.vel = vel;
+	ctrl.p.vel.acc = acc;
+	ctrl.p.vel.sync = false;
+	cmd.type.ctrl = ctrl;
 	Motor_Send_Cmd(&cmd);
 }
 
 static void app_demo_stop(uint8_t id) {
-	MotorCmd_t cmd = {0};
+	MotorCmd_t cmd;
+	MotorCtrl_t ctrl;
 	cmd.op_type = OP_CONTROL;
 	cmd.motor_id = id;
-	cmd.type.ctrl.type = CTRL_STOP;
+	ctrl.type = CTRL_STOP;
+	ctrl.p.stop.sync = false;
+	cmd.type.ctrl = ctrl;
 	Motor_Send_Cmd(&cmd);
 }
 
 static void app_demo_position(uint8_t id, uint8_t dir, uint16_t vel, uint16_t acc, int32_t target, uint8_t mode) {
-	MotorCmd_t cmd = {0};
+	MotorCmd_t cmd;
+	MotorCtrl_t ctrl;
 	cmd.op_type = OP_CONTROL;
 	cmd.motor_id = id;
-	cmd.type.ctrl.type = CTRL_POSITION;
-	cmd.type.ctrl.p.pos.dir = dir;
-	cmd.type.ctrl.p.pos.vel = vel;
-	cmd.type.ctrl.p.pos.acc = acc;
-	cmd.type.ctrl.p.pos.target = target;
-	cmd.type.ctrl.p.pos.mode = mode;
+	ctrl.type = CTRL_POS;
+	ctrl.p.pos.dir = dir;
+	ctrl.p.pos.vel = vel;
+	ctrl.p.pos.acc = acc;
+	ctrl.p.pos.target = target;
+	ctrl.p.pos.mode = mode;
+	ctrl.p.pos.sync = false;
+	cmd.type.ctrl = ctrl;
 	Motor_Send_Cmd(&cmd);
 }
+
+#if MOTOR_MULTI_CMD
+static void app_demo_multi(void) {
+	uint8_t multi_buf[256];
+	ZDT_V5_Multi_Cmd_t cmd = {
+		.data = multi_buf,
+		.used_len = 0,
+		.buf_size = sizeof(multi_buf)
+	};
+
+	ZDT_V5_Multi_Reset(&cmd);
+
+	MotorMulti_t multi;
+
+	multi.type = MULTI_VEL;
+	multi.p.vel.dir = 0;
+	multi.p.vel.vel = 500;
+	multi.p.vel.acc = 200;
+	multi.p.vel.snF = false;
+	ZDT_V5_Process_Multi_Cmd(1, &multi, &cmd);
+
+	multi.type = MULTI_VEL;
+	multi.p.vel.dir = 1;
+	multi.p.vel.vel = 500;
+	multi.p.vel.acc = 200;
+	multi.p.vel.snF = false;
+	ZDT_V5_Process_Multi_Cmd(2, &multi, &cmd);
+
+	ZDT_V5_Multi_Send(&cmd);
+}
+#endif
 
 void App_Task(void *argument) {
 	(void)argument;
 
-	osDelay(500);	// 等待系统就绪
+	osDelay(500);
 
-	/* 使能电机 1 */
 	app_demo_enable(1, true);
 	osDelay(100);
 
-	/* 速度模式：正转 500 RPM，加速度 200 */
 	app_demo_velocity(1, 0, 500, 200);
 	osDelay(3000);
 
-	/* 停止 */
 	app_demo_stop(1);
 	osDelay(500);
 
-	/* 位置模式：相对运动 +2000 脉冲，速度 300 RPM */
 	app_demo_position(1, 0, 300, 200, 2000, 0);
+	osDelay(2000);
+
+#if MOTOR_MULTI_CMD
+	app_demo_multi();
+	osDelay(3000);
+#endif
 
 	for (;;) {
 		osDelay(1000);
@@ -191,9 +232,6 @@ void App_Task(void *argument) {
 
 /* ======================== 系统入口 ======================== */
 
-/**
- * @brief 创建任务并启动调度器
- */
 int main(void) {
 	HAL_Init();
 	SystemClock_Config();
@@ -231,7 +269,6 @@ void zdt_v5_port_log(const char *fmt, ...) {
 }
 */
 
-/* 串口 DMA 接收完成回调 — 由 HAL 中断调用 */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 	if (huart->Instance == USART6) {
 		extern uint8_t rx6Buffer[128];
@@ -239,10 +276,8 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 		memcpy(rx_buf.data, rx6Buffer, Size);
 		rx_buf.len = Size;
 
-		/* 将接收数据放入队列（ISR 安全版本）*/
 		osMessageQueuePut(rx_queue, &rx_buf, 0, 0);
 
-		/* 重新启动 DMA 接收 */
 		HAL_UARTEx_ReceiveToIdle_DMA(&huart6, rx6Buffer, 128);
 	}
 }
@@ -251,28 +286,45 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 
 /* ======================== ZDT_ONLY_DRIVER 模式：直接调用驱动层 API ======================== */
 
-/**
- * @brief 应用任务 — 演示电机控制流程（驱动层方式）
- */
+#if MOTOR_MULTI_CMD
+static void app_demo_multi(void) {
+	uint8_t multi_buf[256];
+	ZDT_V5_Multi_Cmd_t cmd = {
+		.data = multi_buf,
+		.used_len = 0,
+		.buf_size = sizeof(multi_buf)
+	};
+
+	ZDT_V5_Multi_Reset(&cmd);
+
+	ZDT_V5_Multi_Vel_Ctrl(&cmd, 1, 0, 500, 200, false);
+	ZDT_V5_Multi_Vel_Ctrl(&cmd, 2, 1, 500, 200, false);
+
+	ZDT_V5_Multi_Send(&cmd);
+}
+#endif
+
 void App_Task(void *argument) {
 	(void)argument;
 
-	osDelay(500);	// 等待系统就绪
+	osDelay(500);
 
-	/* 使能电机 1 */
 	ZDT_V5_En_Control(1, true, false);
 	osDelay(100);
 
-	/* 速度模式：正转 500 RPM，加速度 200 */
 	ZDT_V5_Vel_Control(1, 0, 500, 200, false);
 	osDelay(3000);
 
-	/* 停止 */
 	ZDT_V5_Stop(1, false);
 	osDelay(500);
 
-	/* 位置模式：相对运动 +2000 脉冲，速度 300 RPM */
 	ZDT_V5_Pos_Control(1, 0, 300, 200, 0, 2000, false, false);
+	osDelay(2000);
+
+#if MOTOR_MULTI_CMD
+	app_demo_multi();
+	osDelay(3000);
+#endif
 
 	for (;;) {
 		osDelay(1000);
@@ -285,10 +337,8 @@ int main(void) {
 	HAL_Init();
 	SystemClock_Config();
 
-	/* 初始化串口（HAL 库函数）*/
 	MX_USART6_UART_Init();
 
-	/* 启动 DMA 接收 */
 	extern uint8_t rx6Buffer[128];
 	HAL_UARTEx_ReceiveToIdle_DMA(&huart6, rx6Buffer, 128);
 
