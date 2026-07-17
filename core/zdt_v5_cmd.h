@@ -146,6 +146,15 @@ typedef enum {
 #endif
 } DeviceInfo_t;
 
+/**
+ * @brief 多机指令结构体
+ */
+typedef struct {
+	uint8_t *data;			// 指令缓冲区指针
+	uint16_t used_len;		// 已用指令长度
+	uint16_t buf_size;		// 缓冲区大小
+} ZDT_V5_Multi_Cmd_t;
+
 #if !ZDT_ONLY_DRIVER
 
 /**
@@ -202,15 +211,6 @@ typedef enum {
 	MULTI_TORQUE_LIMIT,   				// 力矩模式限速控制
 #endif
 } MotorMultiType_t;
-
-/**
- * @brief 多机指令结构体
- */
-typedef struct {
-	uint8_t *data;			// 指令缓冲区指针
-	uint16_t used_len;		// 已用指令长度
-	uint16_t buf_size;		// 缓冲区大小
-} ZDT_V5_Multi_Cmd_t;
 
 /**
  * @brief 多机指令构造器控制结构体
