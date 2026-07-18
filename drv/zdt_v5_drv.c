@@ -1032,7 +1032,10 @@ void ZDT_V5_Modify_DMX512_Params(uint8_t addr, bool svF, uint16_t tch, uint8_t n
  * @return true 成功, false 失败
  */
 bool ZDT_V5_Multi_Reset(ZDT_V5_Multi_Cmd_t *cmd) {
-	if (cmd == NULL || cmd->data == NULL) return false;
+	if (cmd == NULL) return false;
+#if MOTOR_MULTI_PTR_BUF
+	if (cmd->data == NULL) return false;
+#endif
 	if (cmd->buf_size < 4) return false;
 
 	cmd->data[0] = 0x00; cmd->data[1] = 0xAA; cmd->data[2] = 0x00;
@@ -1046,7 +1049,10 @@ bool ZDT_V5_Multi_Reset(ZDT_V5_Multi_Cmd_t *cmd) {
  * @return true 成功, false 失败
  */
 bool ZDT_V5_Multi_Send(ZDT_V5_Multi_Cmd_t *cmd) {
-	if (cmd == NULL || cmd->data == NULL) return false;
+	if (cmd == NULL) return false;
+#if MOTOR_MULTI_PTR_BUF
+	if (cmd->data == NULL) return false;
+#endif
 	if (cmd->buf_size < cmd->used_len + 1) return false;
 
 	cmd->data[cmd->used_len] = 0x6B; cmd->used_len++;
@@ -1068,7 +1074,10 @@ bool ZDT_V5_Multi_Send(ZDT_V5_Multi_Cmd_t *cmd) {
  * @return true 成功, false 失败
  */
 bool ZDT_V5_Multi_Vel_Ctrl(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, bool snF) {
-	if (cmd == NULL || cmd->data == NULL) return false;
+	if (cmd == NULL) return false;
+#if MOTOR_MULTI_PTR_BUF
+	if (cmd->data == NULL) return false;
+#endif
 #if CURRENT_FIRMWARE == FIRMWARE_X
 	uint8_t cmd_len = 9;
 	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
@@ -1105,7 +1114,10 @@ bool ZDT_V5_Multi_Vel_Ctrl(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, u
  * @return true 成功, false 失败
  */
 bool ZDT_V5_Multi_Vel_Ctrl_Limit(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, bool snF, uint16_t max_current) {
-	if (cmd == NULL || cmd->data == NULL) return false;
+	if (cmd == NULL) return false;
+#if MOTOR_MULTI_PTR_BUF
+	if (cmd->data == NULL) return false;
+#endif
 	uint8_t cmd_len = 11;
 	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
 	uint8_t *p = cmd->data + cmd->used_len;
@@ -1135,7 +1147,10 @@ bool ZDT_V5_Multi_Vel_Ctrl_Limit(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t 
  * @return true 成功, false 失败
  */
 bool ZDT_V5_Multi_Pos_Ctrl(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, uint16_t dec, uint32_t clk, bool raF, bool rsp) {
-	if (cmd == NULL || cmd->data == NULL) return false;
+	if (cmd == NULL) return false;
+#if MOTOR_MULTI_PTR_BUF
+	if (cmd->data == NULL) return false;
+#endif
 #if CURRENT_FIRMWARE == FIRMWARE_X
 	uint8_t cmd_len = 16;
 	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
@@ -1180,7 +1195,10 @@ bool ZDT_V5_Multi_Pos_Ctrl(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, u
  * @return true 成功, false 失败
  */
 bool ZDT_V5_Multi_Pos_Ctrl_Limit(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint16_t acc, uint16_t dec, uint32_t pos, uint8_t mode, bool rsp, uint16_t max_current) {
-	if (cmd == NULL || cmd->data == NULL) return false;
+	if (cmd == NULL) return false;
+#if MOTOR_MULTI_PTR_BUF
+	if (cmd->data == NULL) return false;
+#endif
 	uint8_t cmd_len = 18;
 	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
 	uint8_t *p = cmd->data + cmd->used_len;
@@ -1210,7 +1228,10 @@ bool ZDT_V5_Multi_Pos_Ctrl_Limit(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t 
  * @return true 成功, false 失败
  */
 bool ZDT_V5_Multi_Pos_Ctrl_Direct(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint32_t pos, uint8_t mode, bool rsp) {
-	if (cmd == NULL || cmd->data == NULL) return false;
+	if (cmd == NULL) return false;
+#if MOTOR_MULTI_PTR_BUF
+	if (cmd->data == NULL) return false;
+#endif
 	uint8_t cmd_len = 12;
 	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
 	uint8_t *p = cmd->data + cmd->used_len;
@@ -1237,7 +1258,10 @@ bool ZDT_V5_Multi_Pos_Ctrl_Direct(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t
  * @return true 成功, false 失败
  */
 bool ZDT_V5_Multi_Pos_Ctrl_Direct_Limit(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t vel, uint32_t pos, uint8_t mode, bool rsp, uint16_t max_current) {
-	if (cmd == NULL || cmd->data == NULL) return false;
+	if (cmd == NULL) return false;
+#if MOTOR_MULTI_PTR_BUF
+	if (cmd->data == NULL) return false;
+#endif
 	uint8_t cmd_len = 14;
 	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
 	uint8_t *p = cmd->data + cmd->used_len;
@@ -1264,7 +1288,10 @@ bool ZDT_V5_Multi_Pos_Ctrl_Direct_Limit(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, u
  * @return true 成功, false 失败
  */
 bool ZDT_V5_Multi_Torque_Ctrl(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t slope, uint16_t current, bool snF) {
-	if (cmd == NULL || cmd->data == NULL) return false;
+	if (cmd == NULL) return false;
+#if MOTOR_MULTI_PTR_BUF
+	if (cmd->data == NULL) return false;
+#endif
 	uint8_t cmd_len = 9;
 	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
 	uint8_t *p = cmd->data + cmd->used_len;
@@ -1290,7 +1317,10 @@ bool ZDT_V5_Multi_Torque_Ctrl(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir
  * @return true 成功, false 失败
  */
 bool ZDT_V5_Multi_Torque_Ctrl_Limit(ZDT_V5_Multi_Cmd_t *cmd, uint8_t addr, uint8_t dir, uint16_t slope, uint16_t current, uint16_t max_vel, bool snF) {
-	if (cmd == NULL || cmd->data == NULL) return false;
+	if (cmd == NULL) return false;
+#if MOTOR_MULTI_PTR_BUF
+	if (cmd->data == NULL) return false;
+#endif
 	uint8_t cmd_len = 11;
 	if (cmd->used_len + cmd_len > cmd->buf_size) return false;
 	uint8_t *p = cmd->data + cmd->used_len;
