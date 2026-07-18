@@ -102,6 +102,7 @@
 #define MOTOR_POS_MODE           1   // 位置模式
 #define MOTOR_TRIGGER_RESET_POS  1   // 位置清零
 #define MOTOR_MULTI_CMD          1   // 多电机命令（仅 X42S/Y42 型号支持）
+#define MOTOR_MULTI_PTR_BUF      0   // 使用指针缓冲区的多机命令
 ```
 
 #### 1.1 仅驱动层模式（ONLY\_DRIVER）
@@ -244,16 +245,31 @@ cmd.type.ctrl = ctrl;             // 赋值控制命令
 
 ### 多机命令 (`zdt_v5_cmd.h`)
 
-多机命令允许一次发送多个电机的控制指令，实现高效的多电机同步控制。使用时需要创建两个结构体：
+多机命令允许一次发送多个电机的控制指令，实现高效的多电机同步控制。
+
+#### 缓冲区模式
+
+多机指令缓冲区支持两种管理方式，通过 `MOTOR_MULTI_PTR_BUF` 配置：
+
+| 模式 | `MOTOR_MULTI_PTR_BUF` | 特点 | 适用场景 |
+| ---- | -------------------- | ---- | -------- |
+| 数组缓冲区 | `0`（默认） | `ZDT_V5_Multi_Cmd_t.data` 为固定大小数组，管理简单 | 内存充足、命令长度固定、追求简单性 |
+| 指针缓冲区 | `1` | `ZDT_V5_Multi_Cmd_t.data` 为指针，需用户对内存生命周期进行管理 | 内存受限、命令长度不固定、需精确控制内存分配 |
+
+**内存效率对比**：
+- 数组缓冲区模式：每个 `ZDT_V5_Multi_Cmd_t` 结构体占用 `MOTOR_MULTI_BUF_SIZE + 4` 字节（固定开销），即使只发送少量命令也会占用完整缓冲区空间
+- 指针缓冲区模式：仅分配实际需要的内存，结构体占用 `4 + 4 + 2 = 10` 字节（指针 + 长度 + 大小），适合动态命令长度场景
+
+**注意**：使用指针缓冲区模式时，需确保指针指向的内存在接收任务使用期间有效；使用引擎层发送时，引擎层会自动调用 `MOTOR_MULTI_BUF_FREE` 释放内存。
 
 #### 结构体说明
 
 | 结构体 | 用途 | 关键字段 |
 | ------ | ---- | -------- |
-| `ZDT_V5_Multi_Cmd_t` | 多机指令缓冲区，用于累积多个电机的命令 | `data`(缓冲区指针), `used_len`(已用长度), `buf_size`(缓冲区大小) |
+| `ZDT_V5_Multi_Cmd_t` | 多机指令缓冲区，用于累积多个电机的命令 | `data`(缓冲区/指针), `used_len`(已用长度), `buf_size`(缓冲区大小) |
 | `MotorMulti_t` | 多机指令构造器控制结构体，描述单台电机的控制参数 | `type`(指令类型), `p`(参数联合体) |
 
-#### 使用方法
+#### 使用方法（数组缓冲区模式）
 
 ```c
 uint8_t multi_buf[256];             // 多机指令缓冲区
@@ -287,6 +303,29 @@ ZDT_V5_Process_Multi_Cmd(2, &multi, &cmd);
 
 ZDT_V5_Multi_Send(&cmd);            // 发送多机指令
 ```
+
+#### 使用方法（指针缓冲区模式）
+
+```c
+uint8_t *multi_buf = (uint8_t *)pvPortMalloc(256);  // 动态分配缓冲区
+if (!multi_buf) return;
+
+ZDT_V5_Multi_Cmd_t cmd = {
+    .data = multi_buf,              // 指向动态分配的缓冲区
+    .used_len = 0,
+    .buf_size = 256
+};
+
+ZDT_V5_Multi_Reset(&cmd);
+
+// ... 添加指令（同上） ...
+
+ZDT_V5_Multi_Send(&cmd);            // 发送多机指令
+
+vPortFree(multi_buf);               // 使用完毕后释放内存
+```
+
+**注意**：使用引擎层发送多机指令时（`CTRL_MULTI`），引擎层会自动调用 `MOTOR_MULTI_BUF_FREE` 释放指针缓冲区，用户无需手动释放。
 
 #### 支持的多机指令类型
 

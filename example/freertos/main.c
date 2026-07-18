@@ -174,12 +174,22 @@ static void app_demo_position(uint8_t id, uint8_t dir, uint16_t vel, uint16_t ac
 
 #if MOTOR_MULTI_CMD
 static void app_demo_multi(void) {
+#if MOTOR_MULTI_PTR_BUF
+	uint8_t *multi_buf = (uint8_t *)pvPortMalloc(256);
+	if (!multi_buf) return;
+	ZDT_V5_Multi_Cmd_t cmd = {
+		.data = multi_buf,
+		.used_len = 0,
+		.buf_size = 256
+	};
+#else
 	uint8_t multi_buf[256];
 	ZDT_V5_Multi_Cmd_t cmd = {
 		.data = multi_buf,
 		.used_len = 0,
 		.buf_size = sizeof(multi_buf)
 	};
+#endif
 
 	ZDT_V5_Multi_Reset(&cmd);
 
@@ -200,6 +210,10 @@ static void app_demo_multi(void) {
 	ZDT_V5_Process_Multi_Cmd(2, &multi, &cmd);
 
 	ZDT_V5_Multi_Send(&cmd);
+
+#if MOTOR_MULTI_PTR_BUF
+	vPortFree(multi_buf);
+#endif
 }
 #endif
 
@@ -288,12 +302,22 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 
 #if MOTOR_MULTI_CMD
 static void app_demo_multi(void) {
+#if MOTOR_MULTI_PTR_BUF
+	uint8_t *multi_buf = (uint8_t *)pvPortMalloc(256);
+	if (!multi_buf) return;
+	ZDT_V5_Multi_Cmd_t cmd = {
+		.data = multi_buf,
+		.used_len = 0,
+		.buf_size = 256
+	};
+#else
 	uint8_t multi_buf[256];
 	ZDT_V5_Multi_Cmd_t cmd = {
 		.data = multi_buf,
 		.used_len = 0,
 		.buf_size = sizeof(multi_buf)
 	};
+#endif
 
 	ZDT_V5_Multi_Reset(&cmd);
 
@@ -301,6 +325,10 @@ static void app_demo_multi(void) {
 	ZDT_V5_Multi_Vel_Ctrl(&cmd, 2, 1, 500, 200, false);
 
 	ZDT_V5_Multi_Send(&cmd);
+
+#if MOTOR_MULTI_PTR_BUF
+	vPortFree(multi_buf);
+#endif
 }
 #endif
 

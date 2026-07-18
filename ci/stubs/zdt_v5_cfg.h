@@ -113,6 +113,11 @@
 #define MOTOR_VELOCITY_MODE_LIMIT          1
 #define MOTOR_SYNC_TRIGGER                 1
 #define MOTOR_MULTI_CMD                    1
+#if MOTOR_MULTI_CMD
+#define MOTOR_MULTI_PTR_BUF                0
+#define MOTOR_MULTI_BUF_SIZE               96
+#define MOTOR_MULTI_BUF_FREE(ptr)          
+#endif /* MOTOR_MULTI_CMD */
 
 /******************** 触发动作命令 *********************/
 #define MOTOR_TRIGGER_ENCODER_CALIB        1

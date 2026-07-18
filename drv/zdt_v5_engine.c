@@ -551,16 +551,20 @@ static void Motor_Process_Ctrl(uint8_t motor_id, MotorCtrl_t *ctrl) {
 	    case CTRL_SYNC: ZDT_V5_Synchronous_Motion(motor_id); break;
 #endif
 #if MOTOR_MULTI_CMD
-	    case CTRL_MULTI: if (!ZDT_V5_Multi_Send(&ctrl->p.multi.cmd)) { ZDT_V5_LOG("Failed to send multi command"); } break;
+	    case CTRL_MULTI: if (!ZDT_V5_Multi_Send(&ctrl->p.multi.cmd)) { ZDT_V5_LOG("Failed to send multi command"); }
+	#if MOTOR_MULTI_PTR_BUF
+			MOTOR_MULTI_BUF_FREE(ctrl->p.multi.cmd.data);
+	#endif
+			break;
 #endif
 #if MOTOR_POS_MODE_FAST
 		case CTRL_FAST_SET: ZDT_V5_Fast_Set_Param(motor_id, ctrl->p.fast_set.vel, ctrl->p.fast_set.acc,
 #if CURRENT_FIRMWARE == FIRMWARE_EMM
-        0, 0,
+        		0, 0,
 #elif CURRENT_FIRMWARE == FIRMWARE_X
-        ctrl->p.fast_set.dec, ctrl->p.fast_set.max_current,
+        		ctrl->p.fast_set.dec, ctrl->p.fast_set.max_current,
 #endif
-        ctrl->p.fast_set.mode, ctrl->p.fast_set.sync); break;
+        		ctrl->p.fast_set.mode, ctrl->p.fast_set.sync); break;
 		case CTRL_FAST_SEND: ZDT_V5_Fast_Send_Pos(motor_id, ctrl->p.fast_send.pos); break;
 #endif
         case CTRL_NONE: default: ZDT_V5_LOG("Unknown or none control type: %d", ctrl->type); break;

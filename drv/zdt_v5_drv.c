@@ -1033,6 +1033,7 @@ void ZDT_V5_Modify_DMX512_Params(uint8_t addr, bool svF, uint16_t tch, uint8_t n
  */
 bool ZDT_V5_Multi_Reset(ZDT_V5_Multi_Cmd_t *cmd) {
 	if (cmd == NULL || cmd->data == NULL) return false;
+	if (cmd->buf_size < 4) return false;
 
 	cmd->data[0] = 0x00; cmd->data[1] = 0xAA; cmd->data[2] = 0x00;
 	cmd->data[3] = 0x00; cmd->used_len = 4;

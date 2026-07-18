@@ -150,9 +150,13 @@ typedef enum {
  * @brief 多机指令结构体
  */
 typedef struct {
-	uint8_t *data;			// 指令缓冲区指针
-	uint16_t used_len;		// 已用指令长度
-	uint16_t buf_size;		// 缓冲区大小
+#if MOTOR_MULTI_PTR_BUF
+	uint8_t *data;						// 指令缓冲区指针
+#else
+	uint8_t data[MOTOR_MULTI_BUF_SIZE];	// 指令缓冲区指针
+#endif
+	uint16_t used_len;					// 已用指令长度
+	uint16_t buf_size;					// 缓冲区大小
 } ZDT_V5_Multi_Cmd_t;
 
 #if !ZDT_ONLY_DRIVER

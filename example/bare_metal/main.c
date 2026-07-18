@@ -109,12 +109,22 @@ static void motor_calibrate(uint8_t id) {
 #if MOTOR_MULTI_CMD
 /* 多机命令示例：同时控制多个电机 */
 static void motor_multi_demo(void) {
+#if MOTOR_MULTI_PTR_BUF
+	uint8_t *multi_buf = (uint8_t *)pvPortMalloc(256);
+	if (!multi_buf) return;
+	ZDT_V5_Multi_Cmd_t cmd = {
+		.data = multi_buf,
+		.used_len = 0,
+		.buf_size = 256
+	};
+#else
 	uint8_t multi_buf[256];
 	ZDT_V5_Multi_Cmd_t cmd = {
 		.data = multi_buf,
 		.used_len = 0,
 		.buf_size = sizeof(multi_buf)
 	};
+#endif
 
 	ZDT_V5_Multi_Reset(&cmd);
 
@@ -138,6 +148,10 @@ static void motor_multi_demo(void) {
 
 	/* 发送多机指令 */
 	ZDT_V5_Multi_Send(&cmd);
+
+#if MOTOR_MULTI_PTR_BUF
+	vPortFree(multi_buf);
+#endif
 }
 #endif
 #else
@@ -166,12 +180,22 @@ static void motor_calibrate(uint8_t id) {
 #if MOTOR_MULTI_CMD
 /* 多机命令示例：直接调用驱动层 API */
 static void motor_multi_demo(void) {
+#if MOTOR_MULTI_PTR_BUF
+	uint8_t *multi_buf = (uint8_t *)pvPortMalloc(256);
+	if (!multi_buf) return;
+	ZDT_V5_Multi_Cmd_t cmd = {
+		.data = multi_buf,
+		.used_len = 0,
+		.buf_size = 256
+	};
+#else
 	uint8_t multi_buf[256];
 	ZDT_V5_Multi_Cmd_t cmd = {
 		.data = multi_buf,
 		.used_len = 0,
 		.buf_size = sizeof(multi_buf)
 	};
+#endif
 
 	ZDT_V5_Multi_Reset(&cmd);
 
@@ -183,6 +207,10 @@ static void motor_multi_demo(void) {
 
 	/* 发送多机指令 */
 	ZDT_V5_Multi_Send(&cmd);
+
+#if MOTOR_MULTI_PTR_BUF
+	vPortFree(multi_buf);
+#endif
 }
 #endif
 #endif
