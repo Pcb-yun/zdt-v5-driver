@@ -717,8 +717,10 @@ static void Motor_Process_Param_Write(uint8_t motor_id, MotorParamWrite_t *write
  * @param cmd 多机指令结构体指针
  */
 void ZDT_V5_Process_Multi_Cmd(uint8_t addr, MotorMulti_t *multi, ZDT_V5_Multi_Cmd_t *cmd) {
-	if (multi == NULL || cmd == NULL || cmd->data == NULL)
-		return;
+	if (multi == NULL || cmd == NULL) return;
+#if MOTOR_MULTI_PTR_BUF
+	if (cmd->data == NULL) return false;
+#endif
 
 	switch (multi->type) {
 		case MULTI_RESET: ZDT_V5_Multi_Reset(cmd); break;
