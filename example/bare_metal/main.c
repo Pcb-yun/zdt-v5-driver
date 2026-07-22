@@ -118,11 +118,8 @@ static void motor_multi_demo(void) {
 		.buf_size = 256
 	};
 #else
-	uint8_t multi_buf[256];
 	ZDT_V5_Multi_Cmd_t cmd = {
-		.data = multi_buf,
-		.used_len = 0,
-		.buf_size = sizeof(multi_buf)
+		.buf_size = MOTOR_MULTI_BUF_SIZE
 	};
 #endif
 
@@ -189,11 +186,8 @@ static void motor_multi_demo(void) {
 		.buf_size = 256
 	};
 #else
-	uint8_t multi_buf[256];
 	ZDT_V5_Multi_Cmd_t cmd = {
-		.data = multi_buf,
-		.used_len = 0,
-		.buf_size = sizeof(multi_buf)
+		.buf_size = MOTOR_MULTI_BUF_SIZE
 	};
 #endif
 

@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/Pcb-yun/zdt-v5-driver/actions/workflows/build.yml/badge.svg)](https://github.com/Pcb-yun/zdt-v5-driver/actions/workflows/build.yml)
 
-张大头 V5 系列步进电机通用驱动库。
+张大头 V5 系列步进电机通用驱动库（串口版）。
 
 ## 关于此仓库
 
@@ -20,53 +20,46 @@
 
 | 特性      | 说明                                   |
 | ------- | ------------------------------------ |
-| 固件支持    | Emm 固件 + X 固件，同一 API 兼容两种协议          |
-| 型号支持    | X42、X42S、Y42 全系列                     |
-| 功能覆盖    | 使能/速度/位置/力矩/停止/同步/回零/参数读写/编码器校准/多机命令等全部功能 |
-| 条件编译    | 约 100 个配置开关，精确控制每个功能的编译              |
-| 资源占用    | 配置开关关闭的功能完全不占用代码空间                   |
-| 多电机     | 通过 `ZDT_STEP_NUM` 配置，注册制支持任意 ID（无需连续）  |
+| 多固件支持    | Emm 固件 + X 固件，同一 API 兼容两种协议          |
+| 多型号支持    | X42、X42S、Y42 全系列                     |
+| 功能全覆盖    | 使能/速度/位置/力矩/停止/同步/回零/参数读写/编码器校准/多机命令等全部功能 |
+| 资源低占用    | 约 100 个配置开关，精确控制每个功能的编译，不占用代码空间        |
+| 多电机支持     | 通过 `ZDT_STEP_NUM` 配置，注册制支持任意 ID（无需连续）  |
 | RTOS 适配 | 命令队列 + 接收队列 + 状态轮询任务架构，开箱即用          |
 | 无平台依赖   | 仅需标准 C 库，任何 MCU 架构均可移植               |
-
-## 支持的电机
-
-| 型号 | X42 | X42S | Y42 |
-| :--: | :-: | :--: | :-: |
-| 固件 | Emm / X | Emm / X | Emm / X |
 
 ## 文件架构
 
 ```
-├── core/                    # 协议定义层（纯 C 类型 + 宏，零平台依赖）
-│   ├── zdt_v5_proto.h      # 协议命令码、固件类型定义
-│   └── zdt_v5_cmd.h        # 命令结构体、协议枚举定义
+├── core/                       # 协议定义层（纯 C 类型 + 宏，零平台依赖）
+│   ├── zdt_v5_proto.h          # 协议命令码、固件类型定义
+│   └── zdt_v5_cmd.h            # 命令结构体、协议枚举定义
 │
-├── drv/                     # 驱动协议层
-│   ├── zdt_v5_drv.h/.c     # 驱动 API（命令打包，条件编译裁剪）
-│   └── zdt_v5_engine.h/.c  # 引擎层（注册制管理、响应解析、命令分发，可通过 ZDT_ONLY_DRIVER 关闭）
+├── drv/                        # 驱动协议层
+│   ├── zdt_v5_drv.h/.c         # 驱动 API（命令打包，条件编译裁剪）
+│   └── zdt_v5_engine.h/.c      # 引擎层（注册制管理、响应解析、命令分发，可通过 ZDT_ONLY_DRIVER 关闭）
 │
-├── template/                # 移植模板（用户复制到工程中修改）
+├── template/                   # 移植模板（用户复制到工程中修改）
 │   ├── zdt_v5_cfg_template.h   # 配置文件模板
 │   ├── zdt_v5_port_template.h  # 移植接口模板
 │   └── zdt_v5_port_template.c  # 移植实现模板
 │
-├── example/                 # 使用示例（支持 ZDT_ONLY_DRIVER 模式）
-│   ├── bare_metal/          # 裸机示例
-│   └── freertos/            # FreeRTOS 示例
+├── example/                    # 使用示例（支持 ZDT_ONLY_DRIVER 模式）
+│   ├── bare_metal/             # 裸机示例
+│   └── freertos/               # FreeRTOS 示例
 │
-├── docs/                    # 官方文档与通讯协议手册
+├── docs/                       # 官方文档与通讯协议手册
 │   ├── ZDT_X42S_第二代闭环步进电机用户手册V1.0.4_260401.pdf  # 官方原始 PDF 文档
-│   ├── ZDT_X42S_通讯指令手册.md       # AI 辅助整理的通讯指令参考
-│   └── ZDT_X42S_指令分类与包含关系.md  # AI 辅助整理的指令分类与关系图
-└── LICENSE                  # GPL-3.0-or-later
+│   ├── ZDT_X42S_通讯指令手册.md                            # AI 辅助整理的通讯指令参考
+│   └── ZDT_X42S_指令分类与包含关系.md                      # AI 辅助整理的指令分类与关系图
+└── LICENSE                     # GPL-3.0-or-later
 ```
 
 **架构选择：**
 
 | 模式   | `ZDT_ONLY_DRIVER` | 包含层                 | 适用场景                  |
 | ---- | ------------- | ------------------- | --------------------- |
-| 完整模式 | `0`（默认）       | core + drv + engine | RTOS 环境、需要状态解析、复杂命令控制 |
+| 完整模式 | `0`（默认） | core + drv + engine | RTOS 环境、需要状态解析、复杂命令控制 |
 | 轻量模式 | `1`           | core + drv          | 裸机环境、资源受限、简单控制逻辑      |
 
 ## 移植方法
@@ -109,8 +102,8 @@
 
 设置 `ZDT_ONLY_DRIVER = 1` 可启用轻量级模式：
 
-- **不编译引擎层** — `zdt_v5_engine.c/.h` 完全不参与编译，减小代码体积
-- **直接调用驱动层 API** — 使用 `ZDT_V5_En_Control()`、`ZDT_V5_Vel_Control()` 等函数
+- **不编译引擎层** — `zdt_v5_engine.c/.h` 完全不参与编译
+- **直接调用驱动层 API** — 使用 `ZDT_V5_En_Control()`、`ZDT_V5_Vel_Control()` 等函数直接控制电机
 - **无命令结构体** — 无需 `MotorCmd_t`，参数直接传入函数
 - **适合场景** — 裸机环境、资源受限的 MCU、简单的电机控制逻辑
 
@@ -142,8 +135,6 @@ void zdt_v5_port_send(uint8_t *cmd, uint8_t len) {
 }
 ```
 
-函数内部可以使用阻塞发送、DMA 发送或中断发送，仓库对此无限制。
-
 #### 4. 注册电机并处理串口接收
 
 使用引擎层前，需要先注册电机。电机 ID 可任意指定，无需从 1 开始连续：
@@ -170,9 +161,8 @@ void on_uart_rx(uint8_t *data, uint8_t len) {
 
 ### 注意事项
 
-- 移植接口仅需实现串口发送，**接收由中断/DMA 处理**
-- 日志输出可选：在 `port.h` 中定义 `ZDT_V5_LOG` 宏指向 `port.c` 中实现的日志函数，不需要时默认为空
-- 仓库中所有 `.h` 文件均包含 `extern "C"` 声明，C++ 工程可直接使用
+- 移植接口仅需实现串口发送，如果使用引擎层，还需要补充串口接收。
+- 日志输出可选：在 `port.h` 中定义 `ZDT_V5_LOG` 宏指向日志函数，不需要时默认为空
 
 ## API 概览
 
@@ -260,7 +250,7 @@ cmd.type.ctrl = ctrl;             // 赋值控制命令
 - 数组缓冲区模式：每个 `ZDT_V5_Multi_Cmd_t` 结构体占用 `MOTOR_MULTI_BUF_SIZE + 4` 字节（固定开销），即使只发送少量命令也会占用完整缓冲区空间
 - 指针缓冲区模式：仅分配实际需要的内存，结构体占用 `4 + 4 + 2 = 10` 字节（指针 + 长度 + 大小），适合动态命令长度场景
 
-**注意**：使用指针缓冲区模式时，需确保指针指向的内存在接收任务使用期间有效；使用引擎层发送时，引擎层会自动调用 `MOTOR_MULTI_BUF_FREE` 释放内存。
+**注意**：使用指针缓冲区模式时，需确保指针指向的内存在接收任务使用期间有效；使用引擎层发送时，需要配置 `MOTOR_MULTI_BUF_FREE` 宏释放内存。
 
 #### 结构体说明
 
@@ -272,11 +262,8 @@ cmd.type.ctrl = ctrl;             // 赋值控制命令
 #### 使用方法（数组缓冲区模式）
 
 ```c
-uint8_t multi_buf[256];             // 多机指令缓冲区
 ZDT_V5_Multi_Cmd_t cmd = {
-    .data = multi_buf,              // 指向缓冲区
-    .used_len = 0,                  // 初始已用长度
-    .buf_size = sizeof(multi_buf)   // 缓冲区大小
+    .buf_size = MOTOR_MULTI_BUF_SIZE   // 缓冲区大小
 };
 
 ZDT_V5_Multi_Reset(&cmd);           // 初始化多机指令缓冲区
@@ -307,7 +294,7 @@ ZDT_V5_Multi_Send(&cmd);            // 发送多机指令
 #### 使用方法（指针缓冲区模式）
 
 ```c
-uint8_t *multi_buf = (uint8_t *)pvPortMalloc(256);  // 动态分配缓冲区
+uint8_t *multi_buf = (uint8_t *)malloc(256);  // 动态分配缓冲区
 if (!multi_buf) return;
 
 ZDT_V5_Multi_Cmd_t cmd = {
@@ -322,7 +309,7 @@ ZDT_V5_Multi_Reset(&cmd);
 
 ZDT_V5_Multi_Send(&cmd);            // 发送多机指令
 
-vPortFree(multi_buf);               // 使用完毕后释放内存
+free(multi_buf);               // 使用完毕后释放内存
 ```
 
 **注意**：使用引擎层发送多机指令时（`CTRL_MULTI`），引擎层会自动调用 `MOTOR_MULTI_BUF_FREE` 释放指针缓冲区，用户无需手动释放。
@@ -344,9 +331,9 @@ vPortFree(multi_buf);               // 使用完毕后释放内存
 
 | 接口                   | 说明                          |
 | -------------------- | --------------------------- |
-| `zdt_v5_port_send()` | 串口发送函数（用户必须实现）              |
-| `zdt_v5_port_log()`  | 日志输出函数（可选，用户在 port.c 中实现）   |
-| `ZDT_V5_LOG`         | 日志输出宏（可选，用户在 port.h 中指向日志函数） |
+| `zdt_v5_port_send()` | 串口发送函数（必须实现）              |
+| `zdt_v5_port_log()`  | 日志输出函数（可选，在 port.c 中实现或使用已有函数）   |
+| `ZDT_V5_LOG`         | 日志输出宏（可选，在 port.h 中指向日志函数） |
 
 日志启用方式：
 
@@ -371,8 +358,6 @@ void zdt_v5_port_log(const char *fmt, ...) {
     va_end(args);
 }
 ```
-
-不需要日志时，`ZDT_V5_LOG` 默认定义为空，无需任何配置。
 
 ## RTOS 使用建议
 
